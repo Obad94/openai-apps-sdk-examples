@@ -246,14 +246,16 @@ def _tool_meta(widget: PizzazWidget) -> Dict[str, Any]:
 
 
 def _embedded_widget_resource(widget: PizzazWidget) -> types.EmbeddedResource:
+    # Some typed clients expect AnyUrl; cast string to the expected type at runtime
+    text_contents = types.TextResourceContents(
+        uri=widget.template_uri,  # type: ignore[arg-type]
+        mimeType=MIME_TYPE,
+        text=widget.html,
+    )
+    # EmbeddedResource in latest FastMCP generally takes (type, resource)
     return types.EmbeddedResource(
         type="resource",
-        resource=types.TextResourceContents(
-            uri=widget.template_uri,
-            mimeType=MIME_TYPE,
-            text=widget.html,
-            title=widget.title,
-        ),
+        resource=text_contents,
     )
 
 
@@ -276,8 +278,7 @@ async def _list_resources() -> List[types.Resource]:
     return [
         types.Resource(
             name=widget.title,
-            title=widget.title,
-            uri=widget.template_uri,
+            uri=widget.template_uri,  # type: ignore[arg-type]
             description=_resource_description(widget),
             mimeType=MIME_TYPE,
             _meta=_tool_meta(widget),
@@ -291,8 +292,7 @@ async def _list_resource_templates() -> List[types.ResourceTemplate]:
     return [
         types.ResourceTemplate(
             name=widget.title,
-            title=widget.title,
-            uriTemplate=widget.template_uri,
+            uriTemplate=widget.template_uri,  # type: ignore[arg-type]
             description=_resource_description(widget),
             mimeType=MIME_TYPE,
             _meta=_tool_meta(widget),
@@ -311,16 +311,18 @@ async def _handle_read_resource(req: types.ReadResourceRequest) -> types.ServerR
             )
         )
 
-    contents = [
+    contents: List[types.TextResourceContents | types.BlobResourceContents] = [
         types.TextResourceContents(
-            uri=widget.template_uri,
+            uri=widget.template_uri,  # type: ignore[arg-type]
             mimeType=MIME_TYPE,
             text=widget.html,
             _meta=_tool_meta(widget),
         )
     ]
 
-    return types.ServerResult(types.ReadResourceResult(contents=contents))
+    return types.ServerResult(
+        types.ReadResourceResult(contents=contents)  # type: ignore[arg-type]
+    )
 
 
 async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
