@@ -46,7 +46,13 @@ if DEV_ASSET_ORIGIN:
 # Set PIZZAZ_ASSET_HASHED=false to request un-hashed filenames from the dev origin.
 DEV_ASSET_HASHED = (os.environ.get("PIZZAZ_ASSET_HASHED") or "true").lower() != "false"
 
-TEMPLATE_VERSION = (os.environ.get("TEMPLATE_VERSION") or ASSET_HASH).lower()
+_is_dev_unhashed = bool(DEV_ASCET_ORIGIN := DEV_ASSET_ORIGIN) and (not DEV_ASSET_HASHED)
+_auto_dev_version = None
+if _is_dev_unhashed and not os.environ.get("TEMPLATE_VERSION"):
+    # Auto-bump once per minute: dev-<base36(minutes since epoch)>
+    _auto_dev_version = f"dev-{int(__import__('time').time() // 60):x}"
+
+TEMPLATE_VERSION = (os.environ.get("TEMPLATE_VERSION") or _auto_dev_version or ASSET_HASH).lower()
 VERSION_SUFFIX = f"?v={TEMPLATE_VERSION}" if TEMPLATE_VERSION else ""
 
 # Default pizza video (provided by user). Override with PIZZAZ_VIDEO_URL.

@@ -75,6 +75,7 @@ The assets are exposed at [`http://localhost:4444`](http://localhost:4444) with 
 These examples support multiple ways to load widget assets. Pick the mode that suits your workflow:
 
 - Dev (hot reload): run `pnpm dev` to start Vite at `http://localhost:4444`, then start a Pizzaz MCP server. The servers will fetch un-hashed dev bundles from the dev origin so UI changes reflect instantly.
+	- In dev with un-hashed assets and no `TEMPLATE_VERSION` set, the servers auto-generate a minute-granularity version like `dev-k9` so ChatGPT refetches the template periodically while you iterate.
 - Serve (local hashed build): run `pnpm build` then `pnpm serve` to host hashed bundles from the `assets/` folder at `http://localhost:4444`. Start a Pizzaz MCP server and it will use the same origin.
 - CDN fallback: if no dev origin is set and the local hashed files are missing, the servers fall back to the published CDN snapshot. This is useful for quick testing without building locally. Note: `pizzaz-video` is local-only and not on the CDN.
 

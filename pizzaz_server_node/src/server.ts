@@ -41,7 +41,13 @@ const computedAssetHash = crypto
   .slice(0, 4);
 
 const assetHash = (process.env.ASSET_HASH ?? computedAssetHash).toLowerCase();
-const templateVersion = (process.env.TEMPLATE_VERSION ?? assetHash).toLowerCase();
+
+// In dev with un-hashed assets and no explicit TEMPLATE_VERSION, auto-bump once per minute
+const isDevUnhashed = Boolean(devAssetOrigin) && !devAssetUseHash;
+const autoDevVersion = isDevUnhashed && !process.env.TEMPLATE_VERSION
+  ? `dev-${Math.floor(Date.now() / 60_000).toString(36)}`
+  : undefined;
+const templateVersion = ((process.env.TEMPLATE_VERSION ?? autoDevVersion ?? assetHash)).toLowerCase();
 
 // Default pizza video (provided by user). Override with PIZZAZ_VIDEO_URL.
 const DEFAULT_PIZZA_VIDEO_URL =

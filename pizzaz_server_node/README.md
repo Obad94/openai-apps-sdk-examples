@@ -39,6 +39,7 @@ The server can load widget assets from a local dev server, a local hashed build,
 	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`
 	- `$env:PIZZAZ_ASSET_HASHED = 'false'`
 	- Run `pnpm dev` at repo root, then `pnpm start` here.
+	- Tip: if `TEMPLATE_VERSION` is unset in this mode, the server auto-generates a value that changes once per minute (e.g., `dev-k9`) to trigger template re-fetches while you iterate.
 - Serve local build:
 	- `pnpm build` at repo root
 	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'true'`

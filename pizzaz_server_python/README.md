@@ -52,6 +52,7 @@ Control where the widget assets load from via environment variables (PowerShell 
 	- `$env:PIZZAZ_ASSET_HASHED = 'false'`
 	- In another terminal, run `pnpm dev` at the repo root
 	- Start this server: `python main.py`
+	- If `TEMPLATE_VERSION` is unset in this mode, the server auto-generates a value that changes once per minute to trigger template re-fetches during development.
 - Serve local build:
 	- `pnpm build` then `pnpm serve` at the repo root
 	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'true'`
