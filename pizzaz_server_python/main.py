@@ -26,14 +26,14 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 logger = logging.getLogger(__name__)
 
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 # Load .env from this server directory if present, with OS env taking precedence
 try:
     load_dotenv(REPO_ROOT / "pizzaz_server_python" / ".env")
 except Exception:
     pass
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
 ASSETS_DIR = REPO_ROOT / "assets"
 
 with (REPO_ROOT / "package.json").open("r", encoding="utf-8") as package_file:
@@ -53,7 +53,7 @@ if DEV_ASSET_ORIGIN:
 # Set PIZZAZ_ASSET_HASHED=false to request un-hashed filenames from the dev origin.
 DEV_ASSET_HASHED = (os.environ.get("PIZZAZ_ASSET_HASHED") or "true").lower() != "false"
 
-_is_dev_unhashed = bool(DEV_ASCET_ORIGIN := DEV_ASSET_ORIGIN) and (not DEV_ASSET_HASHED)
+_is_dev_unhashed = bool(DEV_ASSET_ORIGIN) and (not DEV_ASSET_HASHED)
 _auto_dev_version = None
 if _is_dev_unhashed and not os.environ.get("TEMPLATE_VERSION"):
     # Auto-bump once per minute: dev-<base36(minutes since epoch)>
