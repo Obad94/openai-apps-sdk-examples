@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { URL, fileURLToPath } from "node:url";
 import crypto from "node:crypto";
@@ -60,6 +60,13 @@ type WidgetConfig = Omit<PizzazWidget, "html" | "templateUri"> & {
 
 function devHostedWidgetHtml(assetName: string): string | undefined {
   if (!devAssetOrigin) {
+    return undefined;
+  }
+
+  // Only serve from the dev origin if a corresponding entry exists under src/
+  // This avoids emitting broken links for widgets that rely on CDN-only assets.
+  const srcDir = resolve(repoRoot, "src", assetName);
+  if (!existsSync(srcDir)) {
     return undefined;
   }
 

@@ -93,6 +93,12 @@ def _dev_hosted_widget_markup(asset_name: str) -> str | None:
     if not DEV_ASSET_ORIGIN:
         return None
 
+    # Only serve from the dev origin if a corresponding entry exists under src/
+    # This avoids emitting broken links for widgets that rely on CDN-only assets.
+    src_dir = REPO_ROOT / "src" / asset_name
+    if not src_dir.exists():
+        return None
+
     hash_segment = f"-{ASSET_HASH}" if DEV_ASSET_HASHED else ""
     css_href = f"{DEV_ASSET_ORIGIN}/{asset_name}{hash_segment}.css"
     js_src = f"{DEV_ASSET_ORIGIN}/{asset_name}{hash_segment}.js"
