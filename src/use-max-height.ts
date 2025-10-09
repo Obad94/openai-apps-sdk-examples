@@ -1,5 +1,5 @@
-import { useWebplusGlobal } from "./use-webplus-global";
+import { useOpenAiGlobal } from "./use-openai-global";
 
 export const useMaxHeight = (): number | null => {
-  return useWebplusGlobal("maxHeight");
+  return useOpenAiGlobal("maxHeight");
 };

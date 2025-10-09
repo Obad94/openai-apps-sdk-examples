@@ -12,20 +12,8 @@ function buildInputs() {
   );
 }
 
-const toFs = (abs: string) => {
-  const normalized = abs.replace(/\\/g, "/");
-  return `/@fs/${normalized}`;
-};
+const toFs = (abs: string) => "/@fs/" + abs.replace(/\\/g, "/");
 
-// User-suggested helper: prefer root-relative, fall back to /@fs for cross-drive/absolute
-const toServerRoot = (abs: string) => {
-  const rel = path.relative(process.cwd(), abs).replace(/\\/g, "/");
-  if (!rel || rel.startsWith("..") || path.isAbsolute(rel)) return toFs(abs);
-  return "./" + rel;
-};
-
-
-const CSS_MODE = (process.env.VITE_DEV_CSS_MODE || "inline").toLowerCase(); // "inline" | "import"
 
 function multiEntryDevEndpoints(options: {
   entries: Record<string, string>;
@@ -169,16 +157,7 @@ function multiEntryDevEndpoints(options: {
       if (kind === "style") {
         const allCss = [...globals, ...perEntry]; // absolute paths on disk
 
-        if (CSS_MODE === "import") {
-          // Use @import statements; resolve relative to project root when possible
-          const lines = [
-            `@source "./src";`,
-            ...allCss.map((p) => `@import "${toServerRoot(path.resolve(p))}";`),
-          ];
-          return lines.join("\n");
-        }
-
-        // Default: inline CSS content to avoid Windows path resolution issues
+        // Inline CSS content to avoid Windows path resolution issues
         let out = `@source "./src";\n`;
         for (const p of allCss) {
           try {

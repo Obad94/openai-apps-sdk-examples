@@ -1,6 +1,6 @@
 import React from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { useWebplusGlobal } from "../use-webplus-global";
+import { useOpenAiGlobal } from "../use-openai-global";
 import { Filter, Settings2, Star } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -45,7 +45,7 @@ function PlaceListItem({ place, isSelected, onClick }) {
 
 export default function Sidebar({ places, selectedId, onSelect }) {
   const [emblaRef] = useEmblaCarousel({ dragFree: true, loop: false });
-  const displayMode = useWebplusGlobal("displayMode");
+  const displayMode = useOpenAiGlobal("displayMode");
   const forceMobile = displayMode !== "fullscreen";
   const scrollRef = React.useRef(null);
   const [showBottomFade, setShowBottomFade] = React.useState(false);

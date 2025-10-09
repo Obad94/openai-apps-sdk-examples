@@ -1,8 +1,40 @@
-type UnknownObject = Record<string, unknown>;
+export type OpenAiGlobals<
+  ToolInput = UnknownObject,
+  ToolOutput = UnknownObject,
+  ToolResponseMetadata = UnknownObject,
+  WidgetState = UnknownObject
+> = {
+  // visuals
+  theme: Theme;
 
-export type WidgetState = UnknownObject;
+  userAgent: UserAgent;
+  locale: string;
 
-export type SetWidgetState = (state: WidgetState) => Promise<void>;
+  // layout
+  maxHeight: number;
+  displayMode: DisplayMode;
+  safeArea: SafeArea;
+
+  // state
+  toolInput: ToolInput;
+  toolOutput: ToolOutput | null;
+  toolResponseMetadata: ToolResponseMetadata | null;
+  widgetState: WidgetState | null;
+  setWidgetState: (state: WidgetState) => Promise<void>;
+};
+
+// currently copied from types.ts in chatgpt/web-sandbox.
+// Will eventually use a public package.
+type API = {
+  callTool: CallTool;
+  sendFollowUpMessage: (args: { prompt: string }) => Promise<void>;
+  openExternal(payload: { href: string }): void;
+
+  // Layout controls
+  requestDisplayMode: RequestDisplayMode;
+};
+
+export type UnknownObject = Record<string, unknown>;
 
 export type Theme = "light" | "dark";
 
@@ -17,39 +49,14 @@ export type SafeArea = {
   insets: SafeAreaInsets;
 };
 
+export type DeviceType = "mobile" | "tablet" | "desktop" | "unknown";
+
 export type UserAgent = {
-  //
-};
-
-export type WebplusGlobals = {
-  // visuals
-  theme: Theme;
-
-  userAgent: UserAgent;
-
-  // layout
-  maxHeight: number;
-  displayMode: DisplayMode;
-  safeArea: SafeArea;
-
-  // state
-  toolInput: UnknownObject;
-  toolOutput: UnknownObject;
-  widgetState: UnknownObject | null;
-  setWidgetState: SetWidgetState;
-};
-
-// currently copied from types.ts in chatgpt/web-sandbox.
-// Will eventually use a public package.
-type API = {
-  // Calling APIs
-  streamCompletion: StreamCompletion;
-  callCompletion: CallCompletion;
-  callTool: CallTool;
-  sendFollowUpMessage: SendFollowUpMessage;
-
-  // Layout controls
-  requestDisplayMode: RequestDisplayMode;
+  device: { type: DeviceType };
+  capabilities: {
+    hover: boolean;
+    touch: boolean;
+  };
 };
 
 /** Display mode */
@@ -72,93 +79,12 @@ export type CallTool = (
   args: Record<string, unknown>
 ) => Promise<CallToolResponse>;
 
-// Subest of the the params for sampling/createMessage
-export type ModelHintName = "thinking-none" | "thinking-low" | "thinking-high";
-
-export type CompletionStreamOptions = {
-  systemPrompt?: string | null;
-  modelType?: ModelHintName;
-};
-
-export type Annotations = {
-  audience?: ("user" | "assistant")[] | null;
-  priority?: number | null;
-};
-
-export type TextContent = {
-  type: "text";
-  text: string;
-  annotations?: Annotations | null;
-  _meta?: Record<string, never> | null;
-};
-
-export type ImageContent = {
-  type: "image";
-  data: string;
-  mimeType: string;
-  annotations?: Annotations | null;
-  _meta?: Record<string, never> | null;
-};
-
-export type AudioContent = {
-  type: "audio";
-  data: string;
-  mimeType: string;
-  annotations?: Annotations | null;
-  _meta?: Record<string, never> | null;
-};
-
-export type SamplingMessage = {
-  role: "user" | "assistant";
-  content: TextContent | ImageContent | AudioContent;
-};
-
-export type ModelHint = {
-  name: ModelHintName;
-};
-
-export type ModelPreferences = {
-  hints: ModelHint[];
-};
-
-export type CreateMessageRequestParams = {
-  messages: SamplingMessage[];
-  modelPreferences: ModelPreferences;
-  systemPrompt?: string | null;
-  metadata?: Record<string, string> | null;
-};
-
-export type CreateMessageResponse = {
-  content: TextContent | ImageContent | AudioContent;
-  model: string;
-  role: "assistant";
-  stopReason?: string;
-};
-
-// this is the MCP sample stream
-export type StreamCompletion = (
-  request: CreateMessageRequestParams
-) => AsyncIterable<CreateMessageResponse>;
-
-export type CallCompletion = (
-  request: CreateMessageRequestParams
-) => Promise<CreateMessageResponse>;
-
-export type SendFollowUpMessage = (args: { prompt: string }) => Promise<void>;
-
 /** Extra events */
-export const SET_GLOBALS_EVENT_TYPE = "webplus:set_globals";
+export const SET_GLOBALS_EVENT_TYPE = "openai:set_globals";
 export class SetGlobalsEvent extends CustomEvent<{
-  globals: Partial<WebplusGlobals>;
+  globals: Partial<OpenAiGlobals>;
 }> {
   readonly type = SET_GLOBALS_EVENT_TYPE;
-}
-
-export const TOOL_RESPONSE_EVENT_TYPE = "webplus:tool_response";
-export class ToolResponseEvent extends CustomEvent<{
-  tool: { name: string; args: UnknownObject };
-}> {
-  readonly type = TOOL_RESPONSE_EVENT_TYPE;
 }
 
 /**
@@ -166,12 +92,10 @@ export class ToolResponseEvent extends CustomEvent<{
  */
 declare global {
   interface Window {
-    webplus: API & WebplusGlobals;
-    openai: API & WebplusGlobals;
+    openai: API & OpenAiGlobals;
   }
 
   interface WindowEventMap {
     [SET_GLOBALS_EVENT_TYPE]: SetGlobalsEvent;
-    [TOOL_RESPONSE_EVENT_TYPE]: ToolResponseEvent;
   }
 }

@@ -6,7 +6,7 @@ import markers from "./markers.json";
 import { AnimatePresence } from "framer-motion";
 import Inspector from "./Inspector";
 import Sidebar from "./Sidebar";
-import { useWebplusGlobal } from "../use-webplus-global";
+import { useOpenAiGlobal } from "../use-openai-global";
 import { useMaxHeight } from "../use-max-height";
 import { Maximize2 } from "lucide-react";
 import {
@@ -51,7 +51,7 @@ export default function App() {
     center: markerCoords.length > 0 ? markerCoords[0] : [0, 0],
     zoom: markerCoords.length > 0 ? 12 : 2,
   }));
-  const displayMode = useWebplusGlobal("displayMode");
+  const displayMode = useOpenAiGlobal("displayMode");
   const allowInspector = displayMode === "fullscreen";
   const maxHeight = useMaxHeight() ?? undefined;
 

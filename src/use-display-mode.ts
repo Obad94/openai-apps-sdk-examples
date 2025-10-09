@@ -1,6 +1,6 @@
-import { useWebplusGlobal } from "./use-webplus-global";
+import { useOpenAiGlobal } from "./use-openai-global";
 import { type DisplayMode } from "./types";
 
 export const useDisplayMode = (): DisplayMode | null => {
-  return useWebplusGlobal("displayMode");
+  return useOpenAiGlobal("displayMode");
 };
