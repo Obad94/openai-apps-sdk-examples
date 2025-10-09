@@ -2,7 +2,7 @@
   "places": [
     {
       "id": "nova-slice-lab",
-      "name": "Nova Slice Lab",
+      "name": "Nova Slice Labs",
       "coords": [-122.4098, 37.8001],
       "description": "Award‑winning Neapolitan pies in North Beach.",
       "city": "North Beach",
@@ -72,7 +72,7 @@
     },
     {
       "id": "atlas-fire-pizzeria",
-      "name": "Atlas Fire PINEAPPLE Alladi",
+      "name": "Atlas Fire Pizzeria",
       "coords": [-122.4123, 37.7899],
       "description": "Sourdough, wood‑fired pies near Nob Hill.",
       "city": "Nob Hill",
