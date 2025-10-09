@@ -39,6 +39,28 @@ Each tool call returns a small JSON payload describing the requested planet plus
 metadata that embeds the solar-system widget, so the Apps SDK can render the 3D
 experience inline.
 
+## Dev/serve/CDN modes
+
+Control where the widget assets load from via environment variables (PowerShell examples):
+
+- Dev hot reload:
+	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`
+	- `$env:PIZZAZ_ASSET_HASHED = 'false'`
+	- In another terminal, run `pnpm dev` at the repo root
+	- Start this server: `python main.py`
+	- Note: If `TEMPLATE_VERSION` is unset in this mode, it auto-bumps once per minute to trigger template re-fetches during development.
+- Serve local build:
+	- `pnpm build` then `pnpm serve` at the repo root
+	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'true'`
+	- Start this server: `python main.py`
+- CDN fallback only:
+	- `Remove-Item Env:PIZZAZ_ASSET_ORIGIN`
+	- Start this server: `python main.py`
+
+### .env support
+
+Create a `.env` file next to this README (see `.env.example`) to store these variables. OS env always wins over `.env`. We intentionally don’t use a root-level `.env`.
+
 ## Next steps
 
 - Expand the schema with additional celestial bodies or mission telemetry.
