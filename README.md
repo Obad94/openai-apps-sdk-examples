@@ -70,6 +70,14 @@ pnpm run serve
 
 The assets are exposed at [`http://localhost:4444`](http://localhost:4444) with CORS enabled so that local tooling (including MCP inspectors) can fetch them.
 
+## Local bundles in the MCP servers
+
+Both Pizzaz MCP servers now read the compiled bundles from the `assets/` directory and inline the CSS/JS in the widget markup. That means the widgets render exactly like your local development build and no longer depend on the published CDN snapshots.
+
+- Make sure you run `pnpm run build` whenever you change the UI. The servers load the hashed files that `build-all.mts` generates (for example, `pizzaz-2d2b.js`).
+- If the expected bundle is missing, the servers fall back to the CDN and log a warning so you can spot the mismatch quickly.
+- You can override the bundle hash by setting `ASSET_HASH=<hash>` before launching the server if you want to experiment with alternate build outputs.
+
 ## Run the MCP servers
 
 The repository ships several demo MCP servers that highlight different widget bundles:

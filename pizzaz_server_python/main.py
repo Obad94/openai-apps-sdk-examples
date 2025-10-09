@@ -11,11 +11,43 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List
+
+import hashlib
+import json
+import logging
+import os
 
 import mcp.types as types
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+logger = logging.getLogger(__name__)
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+ASSETS_DIR = REPO_ROOT / "assets"
+
+with (REPO_ROOT / "package.json").open("r", encoding="utf-8") as package_file:
+    _package_version = json.load(package_file)["version"]
+
+DEFAULT_ASSET_HASH = hashlib.sha256(_package_version.encode("utf-8")).hexdigest()[:4]
+ASSET_HASH = (os.environ.get("ASSET_HASH") or DEFAULT_ASSET_HASH).lower()
+
+CDN_BASE = "https://persistent.oaistatic.com/ecosystem-built-assets"
+CDN_VERSION = "0038"
+
+DEV_ASSET_ORIGIN = os.environ.get("PIZZAZ_ASSET_ORIGIN")
+if DEV_ASSET_ORIGIN:
+    DEV_ASSET_ORIGIN = DEV_ASSET_ORIGIN.rstrip("/")
+
+# When using the Vite dev server (`pnpm run dev`), assets are served without the hash suffix.
+# Set PIZZAZ_ASSET_HASHED=false to request un-hashed filenames from the dev origin.
+DEV_ASSET_HASHED = (os.environ.get("PIZZAZ_ASSET_HASHED") or "true").lower() != "false"
+
+TEMPLATE_VERSION = (os.environ.get("TEMPLATE_VERSION") or ASSET_HASH).lower()
+VERSION_SUFFIX = f"?v={TEMPLATE_VERSION}" if TEMPLATE_VERSION else ""
 
 
 @dataclass(frozen=True)
@@ -29,82 +61,128 @@ class PizzazWidget:
     response_text: str
 
 
+def _inline_widget_markup(asset_name: str) -> str | None:
+    css_path = ASSETS_DIR / f"{asset_name}-{ASSET_HASH}.css"
+    js_path = ASSETS_DIR / f"{asset_name}-{ASSET_HASH}.js"
+
+    try:
+        css = css_path.read_text(encoding="utf-8")
+        js = js_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    except OSError as exc:  # pragma: no cover
+        logger.warning("Failed to load local assets for %s (%s)", asset_name, exc)
+        return None
+
+    return (
+        f'<div id="{asset_name}-root"></div>\n'
+        f"<style>\n{css}\n</style>\n"
+        f"<script type=\"module\">\n{js}\n</script>"
+    )
+
+
+def _cdn_widget_markup(asset_name: str) -> str:
+    return (
+        f'<div id="{asset_name}-root"></div>\n'
+        f'<link rel="stylesheet" href="{CDN_BASE}/{asset_name}-{CDN_VERSION}.css">\n'
+        f'<script type="module" src="{CDN_BASE}/{asset_name}-{CDN_VERSION}.js"></script>'
+    )
+
+
+def _dev_hosted_widget_markup(asset_name: str) -> str | None:
+    if not DEV_ASSET_ORIGIN:
+        return None
+
+    hash_segment = f"-{ASSET_HASH}" if DEV_ASSET_HASHED else ""
+    css_href = f"{DEV_ASSET_ORIGIN}/{asset_name}{hash_segment}.css"
+    js_src = f"{DEV_ASSET_ORIGIN}/{asset_name}{hash_segment}.js"
+
+    return (
+        f'<div id="{asset_name}-root"></div>\n'
+        f'<link rel="stylesheet" href="{css_href}">\n'
+        f'<script type="module" src="{js_src}"></script>'
+    )
+
+
+def _build_widget_markup(asset_name: str) -> str:
+    dev_markup = _dev_hosted_widget_markup(asset_name)
+    if dev_markup is not None:
+        logger.info("Serving %s from dev asset origin %s", asset_name, DEV_ASSET_ORIGIN)
+        return dev_markup
+
+    inline = _inline_widget_markup(asset_name)
+    if inline is not None:
+        return inline
+
+    logger.warning(
+        "Falling back to CDN assets for %s (hash %s not found in %s)",
+        asset_name,
+        ASSET_HASH,
+        ASSETS_DIR,
+    )
+    return _cdn_widget_markup(asset_name)
+
+
+_WIDGET_CONFIGS: List[Dict[str, str]] = [
+    {
+        "identifier": "pizza-map",
+        "title": "Show Pizza Map",
+        "template_uri_base": "ui://widget/pizza-map.html",
+        "invoking": "Hand-tossing a map",
+        "invoked": "Served a fresh map",
+        "response_text": "Rendered a pizza map!",
+        "asset_name": "pizzaz",
+    },
+    {
+        "identifier": "pizza-carousel",
+        "title": "Show Pizza Carousel",
+        "template_uri_base": "ui://widget/pizza-carousel.html",
+        "invoking": "Carousel some spots",
+        "invoked": "Served a fresh carousel",
+        "response_text": "Rendered a pizza carousel!",
+        "asset_name": "pizzaz-carousel",
+    },
+    {
+        "identifier": "pizza-albums",
+        "title": "Show Pizza Album",
+        "template_uri_base": "ui://widget/pizza-albums.html",
+        "invoking": "Hand-tossing an album",
+        "invoked": "Served a fresh album",
+        "response_text": "Rendered a pizza album!",
+        "asset_name": "pizzaz-albums",
+    },
+    {
+        "identifier": "pizza-list",
+        "title": "Show Pizza List",
+        "template_uri_base": "ui://widget/pizza-list.html",
+        "invoking": "Hand-tossing a list",
+        "invoked": "Served a fresh list",
+        "response_text": "Rendered a pizza list!",
+        "asset_name": "pizzaz-list",
+    },
+    {
+        "identifier": "pizza-video",
+        "title": "Show Pizza Video",
+        "template_uri_base": "ui://widget/pizza-video.html",
+        "invoking": "Hand-tossing a video",
+        "invoked": "Served a fresh video",
+        "response_text": "Rendered a pizza video!",
+        "asset_name": "pizzaz-video",
+    },
+]
+
+
 widgets: List[PizzazWidget] = [
     PizzazWidget(
-        identifier="pizza-map",
-        title="Show Pizza Map",
-        template_uri="ui://widget/pizza-map.html",
-        invoking="Hand-tossing a map",
-        invoked="Served a fresh map",
-        html=(
-            "<div id=\"pizzaz-root\"></div>\n"
-            "<link rel=\"stylesheet\" href=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-0038.css\">\n"
-            "<script type=\"module\" src=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-0038.js\"></script>"
-        ),
-        response_text="Rendered a pizza map!",
-    ),
-    PizzazWidget(
-        identifier="pizza-carousel",
-        title="Show Pizza Carousel",
-        template_uri="ui://widget/pizza-carousel.html",
-        invoking="Carousel some spots",
-        invoked="Served a fresh carousel",
-        html=(
-            "<div id=\"pizzaz-carousel-root\"></div>\n"
-            "<link rel=\"stylesheet\" href=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-carousel-0038.css\">\n"
-            "<script type=\"module\" src=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-carousel-0038.js\"></script>"
-        ),
-        response_text="Rendered a pizza carousel!",
-    ),
-    PizzazWidget(
-        identifier="pizza-albums",
-        title="Show Pizza Album",
-        template_uri="ui://widget/pizza-albums.html",
-        invoking="Hand-tossing an album",
-        invoked="Served a fresh album",
-        html=(
-            "<div id=\"pizzaz-albums-root\"></div>\n"
-            "<link rel=\"stylesheet\" href=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-albums-0038.css\">\n"
-            "<script type=\"module\" src=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-albums-0038.js\"></script>"
-        ),
-        response_text="Rendered a pizza album!",
-    ),
-    PizzazWidget(
-        identifier="pizza-list",
-        title="Show Pizza List",
-        template_uri="ui://widget/pizza-list.html",
-        invoking="Hand-tossing a list",
-        invoked="Served a fresh list",
-        html=(
-            "<div id=\"pizzaz-list-root\"></div>\n"
-            "<link rel=\"stylesheet\" href=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-list-0038.css\">\n"
-            "<script type=\"module\" src=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-list-0038.js\"></script>"
-        ),
-        response_text="Rendered a pizza list!",
-    ),
-    PizzazWidget(
-        identifier="pizza-video",
-        title="Show Pizza Video",
-        template_uri="ui://widget/pizza-video.html",
-        invoking="Hand-tossing a video",
-        invoked="Served a fresh video",
-        html=(
-            "<div id=\"pizzaz-video-root\"></div>\n"
-            "<link rel=\"stylesheet\" href=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-video-0038.css\">\n"
-            "<script type=\"module\" src=\"https://persistent.oaistatic.com/"
-            "ecosystem-built-assets/pizzaz-video-0038.js\"></script>"
-        ),
-        response_text="Rendered a pizza video!",
-    ),
+        identifier=config["identifier"],
+        title=config["title"],
+        template_uri=f"{config['template_uri_base']}{VERSION_SUFFIX}",
+        invoking=config["invoking"],
+        invoked=config["invoked"],
+        html=_build_widget_markup(config["asset_name"]),
+        response_text=config["response_text"],
+    )
+    for config in _WIDGET_CONFIGS
 ]
 
 

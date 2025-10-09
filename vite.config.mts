@@ -12,10 +12,20 @@ function buildInputs() {
   );
 }
 
-const toFs = (abs: string) => "/@fs" + abs.replace(/\\/g, "/");
+const toFs = (abs: string) => {
+  const normalized = abs.replace(/\\/g, "/");
+  return `/@fs/${normalized}`;
+};
 
-const toServerRoot = (abs: string) =>
-  "./" + path.posix.relative(process.cwd(), abs).replace(/\\/g, "/");
+// User-suggested helper: prefer root-relative, fall back to /@fs for cross-drive/absolute
+const toServerRoot = (abs: string) => {
+  const rel = path.relative(process.cwd(), abs).replace(/\\/g, "/");
+  if (!rel || rel.startsWith("..") || path.isAbsolute(rel)) return toFs(abs);
+  return "./" + rel;
+};
+
+
+const CSS_MODE = (process.env.VITE_DEV_CSS_MODE || "inline").toLowerCase(); // "inline" | "import"
 
 function multiEntryDevEndpoints(options: {
   entries: Record<string, string>;
@@ -158,15 +168,32 @@ function multiEntryDevEndpoints(options: {
 
       if (kind === "style") {
         const allCss = [...globals, ...perEntry]; // absolute paths on disk
-        const lines = [
-          `@source "./src";`,
-          ...allCss.map((p) => `@import "${toServerRoot(p)}";`),
-        ];
-        return lines.join("\n");
+
+        if (CSS_MODE === "import") {
+          // Use @import statements; resolve relative to project root when possible
+          const lines = [
+            `@source "./src";`,
+            ...allCss.map((p) => `@import "${toServerRoot(path.resolve(p))}";`),
+          ];
+          return lines.join("\n");
+        }
+
+        // Default: inline CSS content to avoid Windows path resolution issues
+        let out = `@source "./src";\n`;
+        for (const p of allCss) {
+          try {
+            const css = fs.readFileSync(p, "utf8");
+            out += `\n/* ===== ${p.replace(/\\\\/g, "/")} ===== */\n`;
+            out += css + "\n";
+          } catch (e) {
+            out += `\n/* Failed to read ${p}: ${String(e)} */\n`;
+          }
+        }
+        return out;
       }
 
       if (kind === "entry") {
-        const spec = toFs(entry);
+    const spec = toFs(entry);
 
         const lines: string[] = [];
 
@@ -184,7 +211,7 @@ if (!window.__vite_plugin_react_preamble_installed__) {
 }
 `);
 
-        lines.push(`import "/${name}.css";`);
+  lines.push(`import "/${name}.css";`);
         lines.push(`await import(${JSON.stringify(spec)});`);
 
         return lines.join("\n");
