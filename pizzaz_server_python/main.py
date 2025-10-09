@@ -451,5 +451,8 @@ except Exception:
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run("pizzaz_server_python.main:app", host="0.0.0.0", port=8000)
+    try:
+        _port = int(os.environ.get("PORT", "8000"))
+    except Exception:
+        _port = 8000
+    uvicorn.run("pizzaz_server_python.main:app", host="0.0.0.0", port=_port)
