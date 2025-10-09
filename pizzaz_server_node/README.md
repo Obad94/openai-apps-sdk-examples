@@ -30,3 +30,26 @@ Each tool responds with:
 - `_meta.openai/outputTemplate`: metadata that binds the response to the matching Skybridge widget shell.
 
 Feel free to extend the handlers with real data sources, authentication, and persistence.
+
+## Dev/serve/CDN modes
+
+The server can load widget assets from a local dev server, a local hashed build, or the CDN. Control this via environment variables (PowerShell examples):
+
+- Dev hot reload:
+	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`
+	- `$env:PIZZAZ_ASSET_HASHED = 'false'`
+	- Run `pnpm dev` at repo root, then `pnpm start` here.
+- Serve local build:
+	- `pnpm build` at repo root
+	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'true'`
+	- `pnpm serve` at repo root to host `assets/`
+	- `pnpm start` here
+- CDN fallback only:
+	- `Remove-Item Env:PIZZAZ_ASSET_ORIGIN`
+	- Optionally set `$env:ASSET_HASH = 'dead'` to force CDN on hashed paths
+	- `pnpm start`
+
+Other useful env vars:
+
+- `$env:TEMPLATE_VERSION = 'dev1'` – cache-busts template URIs in ChatGPT
+- `$env:PIZZAZ_VIDEO_URL = 'https://...'` – override default video used by `pizzaz-video` widget

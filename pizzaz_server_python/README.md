@@ -42,3 +42,26 @@ Use these handlers as a starting point when wiring in real data, authentication,
 1. Register reusable UI resources that load static HTML bundles.
 2. Associate tools with those widgets via `_meta.openai/outputTemplate`.
 3. Ship structured JSON alongside human-readable confirmation text.
+
+## Dev/serve/CDN modes
+
+Control where the widget assets load from via environment variables (PowerShell examples):
+
+- Dev hot reload:
+	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`
+	- `$env:PIZZAZ_ASSET_HASHED = 'false'`
+	- In another terminal, run `pnpm dev` at the repo root
+	- Start this server: `python main.py`
+- Serve local build:
+	- `pnpm build` then `pnpm serve` at the repo root
+	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'true'`
+	- Start this server: `python main.py`
+- CDN fallback only:
+	- `Remove-Item Env:PIZZAZ_ASSET_ORIGIN`
+	- Optionally `$env:ASSET_HASH = 'dead'` to force CDN paths
+	- Start this server: `python main.py`
+
+Other env vars:
+
+- `$env:TEMPLATE_VERSION = 'dev1'` – cache-busts template URIs
+- `$env:PIZZAZ_VIDEO_URL = 'https://...'` – override default video for `pizzaz-video`

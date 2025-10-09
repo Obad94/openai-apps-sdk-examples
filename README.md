@@ -70,13 +70,38 @@ pnpm run serve
 
 The assets are exposed at [`http://localhost:4444`](http://localhost:4444) with CORS enabled so that local tooling (including MCP inspectors) can fetch them.
 
+## Run modes at a glance (dev, serve, CDN)
+
+These examples support multiple ways to load widget assets. Pick the mode that suits your workflow:
+
+- Dev (hot reload): run `pnpm dev` to start Vite at `http://localhost:4444`, then start a Pizzaz MCP server. The servers will fetch un-hashed dev bundles from the dev origin so UI changes reflect instantly.
+- Serve (local hashed build): run `pnpm build` then `pnpm serve` to host hashed bundles from the `assets/` folder at `http://localhost:4444`. Start a Pizzaz MCP server and it will use the same origin.
+- CDN fallback: if no dev origin is set and the local hashed files are missing, the servers fall back to the published CDN snapshot. This is useful for quick testing without building locally. Note: `pizzaz-video` is local-only and not on the CDN.
+
+Environment variables you can set before starting a server (PowerShell examples):
+
+- `PIZZAZ_ASSET_ORIGIN`: when set, points to a dev/serve host, e.g. `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`
+- `PIZZAZ_ASSET_HASHED`: set to `true` to request hashed assets from the origin; `false` for dev un-hashed, e.g. `$env:PIZZAZ_ASSET_HASHED = 'false'`
+- `ASSET_HASH`: optionally override the asset hash (4 chars) used for lookups, e.g. `$env:ASSET_HASH = '2d2b'`
+- `TEMPLATE_VERSION`: cache-busting query value appended to `ui://` template URIs, e.g. `$env:TEMPLATE_VERSION = 'dev1'`
+- `PIZZAZ_VIDEO_URL`: override the default video used in the `pizzaz-video` widget
+
+Examples (PowerShell):
+
+- Dev hot reload:
+	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'false'`; `pnpm dev` in one terminal; `pnpm start:pizzaz-node` in another.
+- Serve local build:
+	- `pnpm build`; `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'true'`; `pnpm serve`; `pnpm start:pizzaz-node`.
+- CDN-only (no local assets):
+	- `Remove-Item Env:PIZZAZ_ASSET_ORIGIN`; `Remove-Item Env:ASSET_HASH` (optional); `pnpm start:pizzaz-node`.
+
 ## Local bundles in the MCP servers
 
-Both Pizzaz MCP servers now read the compiled bundles from the `assets/` directory and inline the CSS/JS in the widget markup. That means the widgets render exactly like your local development build and no longer depend on the published CDN snapshots.
+Both Pizzaz MCP servers select assets in this order: dev origin → inline local build → CDN fallback. The CSS/JS are inlined when using local builds so the widgets render the same as your local output.
 
-- Make sure you run `pnpm run build` whenever you change the UI. The servers load the hashed files that `build-all.mts` generates (for example, `pizzaz-2d2b.js`).
-- If the expected bundle is missing, the servers fall back to the CDN and log a warning so you can spot the mismatch quickly.
-- You can override the bundle hash by setting `ASSET_HASH=<hash>` before launching the server if you want to experiment with alternate build outputs.
+- Run `pnpm run build` when UI changes; the servers read the hashed files that `build-all.mts` generates (for example, `pizzaz-2d2b.js`).
+- If a local file is missing, the servers silently fall back to the CDN (info-level logs only) so expected CDN usage stays clean.
+- Override the bundle hash with `ASSET_HASH` if you want to target a specific build output.
 
 ## Run the MCP servers
 
