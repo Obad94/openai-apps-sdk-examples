@@ -49,6 +49,11 @@ DEV_ASSET_HASHED = (os.environ.get("PIZZAZ_ASSET_HASHED") or "true").lower() != 
 TEMPLATE_VERSION = (os.environ.get("TEMPLATE_VERSION") or ASSET_HASH).lower()
 VERSION_SUFFIX = f"?v={TEMPLATE_VERSION}" if TEMPLATE_VERSION else ""
 
+# Default pizza video (free stock from Coverr). Override with PIZZAZ_VIDEO_URL.
+DEFAULT_PIZZA_VIDEO_URL = (
+    "https://cdn.coverr.co/videos/coverr-melting-cheese-pizza-2988/1080p.mp4"
+)
+
 
 @dataclass(frozen=True)
 class PizzazWidget:
@@ -74,18 +79,34 @@ def _inline_widget_markup(asset_name: str) -> str | None:
         logger.warning("Failed to load local assets for %s (%s)", asset_name, exc)
         return None
 
+    video_url = os.environ.get("PIZZAZ_VIDEO_URL") or DEFAULT_PIZZA_VIDEO_URL
+    extra = (
+        f"<script>window.__PIZZAZ_VIDEO_URL__ = {json.dumps(video_url)};</script>"
+        if asset_name == "pizzaz-video"
+        else ""
+    )
+
     return (
         f'<div id="{asset_name}-root"></div>\n'
         f"<style>\n{css}\n</style>\n"
-        f"<script type=\"module\">\n{js}\n</script>"
+        f"<script type=\"module\">\n{js}\n</script>\n"
+        f"{extra}"
     )
 
 
 def _cdn_widget_markup(asset_name: str) -> str:
+    video_url = os.environ.get("PIZZAZ_VIDEO_URL") or DEFAULT_PIZZA_VIDEO_URL
+    extra = (
+        f"<script>window.__PIZZAZ_VIDEO_URL__ = {json.dumps(video_url)};</script>"
+        if asset_name == "pizzaz-video"
+        else ""
+    )
+
     return (
         f'<div id="{asset_name}-root"></div>\n'
         f'<link rel="stylesheet" href="{CDN_BASE}/{asset_name}-{CDN_VERSION}.css">\n'
-        f'<script type="module" src="{CDN_BASE}/{asset_name}-{CDN_VERSION}.js"></script>'
+        f'<script type="module" src="{CDN_BASE}/{asset_name}-{CDN_VERSION}.js"></script>\n'
+        f"{extra}"
     )
 
 
@@ -103,10 +124,18 @@ def _dev_hosted_widget_markup(asset_name: str) -> str | None:
     css_href = f"{DEV_ASSET_ORIGIN}/{asset_name}{hash_segment}.css"
     js_src = f"{DEV_ASSET_ORIGIN}/{asset_name}{hash_segment}.js"
 
+    video_url = os.environ.get("PIZZAZ_VIDEO_URL") or DEFAULT_PIZZA_VIDEO_URL
+    extra = (
+        f"<script>window.__PIZZAZ_VIDEO_URL__ = {json.dumps(video_url)};</script>"
+        if asset_name == "pizzaz-video"
+        else ""
+    )
+
     return (
         f'<div id="{asset_name}-root"></div>\n'
         f'<link rel="stylesheet" href="{css_href}">\n'
-        f'<script type="module" src="{js_src}"></script>'
+        f'<script type="module" src="{js_src}"></script>\n'
+        f"{extra}"
     )
 
 

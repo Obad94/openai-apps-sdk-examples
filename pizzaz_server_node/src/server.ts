@@ -43,6 +43,10 @@ const computedAssetHash = crypto
 const assetHash = (process.env.ASSET_HASH ?? computedAssetHash).toLowerCase();
 const templateVersion = (process.env.TEMPLATE_VERSION ?? assetHash).toLowerCase();
 
+// Default pizza video (free stock from Coverr). Override with PIZZAZ_VIDEO_URL.
+const DEFAULT_PIZZA_VIDEO_URL =
+  "https://cdn.coverr.co/videos/coverr-melting-cheese-pizza-2988/1080p.mp4";
+
 type PizzazWidget = {
   id: string;
   title: string;
@@ -73,11 +77,15 @@ function devHostedWidgetHtml(assetName: string): string | undefined {
   const hashSegment = devAssetUseHash ? `-${assetHash}` : "";
   const cssHref = `${devAssetOrigin}/${assetName}${hashSegment}.css`;
   const jsSrc = `${devAssetOrigin}/${assetName}${hashSegment}.js`;
+  const extraScript = assetName === "pizzaz-video"
+    ? `<script>window.__PIZZAZ_VIDEO_URL__ = ${JSON.stringify(process.env.PIZZAZ_VIDEO_URL ?? DEFAULT_PIZZA_VIDEO_URL)};<\/script>`
+    : "";
 
   return `
 <div id="${assetName}-root"></div>
 <link rel="stylesheet" href="${cssHref}">
 <script type="module" src="${jsSrc}"></script>
+${extraScript}
   `.trim();
 }
 
@@ -85,6 +93,10 @@ function inlineWidgetHtml(assetName: string): string | undefined {
   try {
     const css = readFileSync(resolve(assetsDir, `${assetName}-${assetHash}.css`), "utf8");
     const js = readFileSync(resolve(assetsDir, `${assetName}-${assetHash}.js`), "utf8");
+
+    const extraScript = assetName === "pizzaz-video"
+      ? `<script>window.__PIZZAZ_VIDEO_URL__ = ${JSON.stringify(process.env.PIZZAZ_VIDEO_URL ?? DEFAULT_PIZZA_VIDEO_URL)};<\/script>`
+      : "";
 
     return `
 <div id="${assetName}-root"></div>
@@ -94,6 +106,7 @@ ${css}
 <script type="module">
 ${js}
 </script>
+${extraScript}
     `.trim();
   } catch (error) {
     const message = (error as NodeJS.ErrnoException).message ?? String(error);
@@ -103,10 +116,15 @@ ${js}
 }
 
 function cdnWidgetHtml(assetName: string): string {
+  const extraScript = assetName === "pizzaz-video"
+    ? `<script>window.__PIZZAZ_VIDEO_URL__ = ${JSON.stringify(process.env.PIZZAZ_VIDEO_URL ?? DEFAULT_PIZZA_VIDEO_URL)};<\/script>`
+    : "";
+
   return `
 <div id="${assetName}-root"></div>
 <link rel="stylesheet" href="${CDN_BASE}/${assetName}-${CDN_VERSION}.css">
 <script type="module" src="${CDN_BASE}/${assetName}-${CDN_VERSION}.js"></script>
+${extraScript}
   `.trim();
 }
 
