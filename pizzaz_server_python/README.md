@@ -70,3 +70,10 @@ Other env vars:
 ### .env support (per server)
 
 You can create a `.env` file next to this README (see `.env.example`) to store these variables for Python. OS env always wins over `.env`. We intentionally don’t use a root-level `.env`.
+
+Which vars matter?
+- None are strictly required. With nothing set, the server serves widgets via CDN and uses sensible defaults.
+- Set PIZZAZ_ASSET_ORIGIN + PIZZAZ_ASSET_HASHED=false for hot reload from Vite.
+- Set PIZZAZ_ASSET_ORIGIN + PIZZAZ_ASSET_HASHED=true for serving local hashed assets after a build.
+- Set TEMPLATE_VERSION to force ChatGPT to refetch the ui:// template on demand (auto-bumps in dev unhashed if unset).
+- ASSET_HASH is advanced; skip it unless you need to target a specific build or force CDN.
