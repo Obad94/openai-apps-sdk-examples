@@ -14,6 +14,13 @@ function buildInputs() {
 
 const toFs = (abs: string) => "/@fs/" + abs.replace(/\\/g, "/");
 
+const toServerRoot = (abs: string) => {
+  const rel = path.relative(process.cwd(), abs).replace(/\\/g, "/");
+  // If it's not really relative (different drive or absolute), fall back to fs URL
+  if (!rel || rel.startsWith("..") || path.isAbsolute(rel)) return toFs(abs);
+  return "./" + rel;
+};
+
 
 function multiEntryDevEndpoints(options: {
   entries: Record<string, string>;
@@ -156,23 +163,15 @@ function multiEntryDevEndpoints(options: {
 
       if (kind === "style") {
         const allCss = [...globals, ...perEntry]; // absolute paths on disk
-
-        // Inline CSS content to avoid Windows path resolution issues
-        let out = `@source "./src";\n`;
-        for (const p of allCss) {
-          try {
-            const css = fs.readFileSync(p, "utf8");
-            out += `\n/* ===== ${p.replace(/\\\\/g, "/")} ===== */\n`;
-            out += css + "\n";
-          } catch (e) {
-            out += `\n/* Failed to read ${p}: ${String(e)} */\n`;
-          }
-        }
-        return out;
+        const lines = [
+          `@source "./src";`,
+          ...allCss.map((p) => `@import "${toServerRoot(p)}";`),
+        ];
+        return lines.join("\n");
       }
 
       if (kind === "entry") {
-    const spec = toFs(entry);
+        const spec = toFs(entry);
 
         const lines: string[] = [];
 
@@ -190,7 +189,7 @@ if (!window.__vite_plugin_react_preamble_installed__) {
 }
 `);
 
-  lines.push(`import "/${name}.css";`);
+    lines.push(`import "/${name}.css";`);
         lines.push(`await import(${JSON.stringify(spec)});`);
 
         return lines.join("\n");
