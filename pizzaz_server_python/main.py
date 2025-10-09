@@ -49,9 +49,9 @@ DEV_ASSET_HASHED = (os.environ.get("PIZZAZ_ASSET_HASHED") or "true").lower() != 
 TEMPLATE_VERSION = (os.environ.get("TEMPLATE_VERSION") or ASSET_HASH).lower()
 VERSION_SUFFIX = f"?v={TEMPLATE_VERSION}" if TEMPLATE_VERSION else ""
 
-# Default pizza video (free stock from Coverr). Override with PIZZAZ_VIDEO_URL.
+# Default pizza video (provided by user). Override with PIZZAZ_VIDEO_URL.
 DEFAULT_PIZZA_VIDEO_URL = (
-    "https://cdn.coverr.co/videos/coverr-melting-cheese-pizza-2988/1080p.mp4"
+    "https://videos.openai.com/vg-assets/assets%2Ftask_01k75dw4hcfb1tmte3mjmmeba4%2Ftask_01k75dw4hcfb1tmte3mjmmeba4_genid_dd080f2b-26b2-461f-8c61-651674dc3e3a_25_10_09_21_26_340602%2Fvideos%2F00000_402619027%2Fsource.mp4?se=2025-10-10T01%3A27%3A20Z&sp=r&sv=2024-08-04&sr=b&skoid=8b872fb2-b44b-4c1d-9ff6-1d4509d19e6e&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-10-09T21%3A13%3A27Z&ske=2025-10-09T22%3A23%3A27Z&sks=b&skv=2024-08-04&sig=BSzXN7jo/Ogs7ltxo%2BUj0ay1JwBTLqhtjYxmfUiqH0c%3D&az=oaivgprodscus"
 )
 
 
@@ -149,8 +149,8 @@ def _build_widget_markup(asset_name: str) -> str:
     if inline is not None:
         return inline
 
-    logger.warning(
-        "Falling back to CDN assets for %s (hash %s not found in %s)",
+    logger.info(
+        "Using CDN assets for %s (no matching local assets for hash %s in %s)",
         asset_name,
         ASSET_HASH,
         ASSETS_DIR,

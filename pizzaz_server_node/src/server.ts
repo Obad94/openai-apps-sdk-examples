@@ -43,9 +43,9 @@ const computedAssetHash = crypto
 const assetHash = (process.env.ASSET_HASH ?? computedAssetHash).toLowerCase();
 const templateVersion = (process.env.TEMPLATE_VERSION ?? assetHash).toLowerCase();
 
-// Default pizza video (free stock from Coverr). Override with PIZZAZ_VIDEO_URL.
+// Default pizza video (provided by user). Override with PIZZAZ_VIDEO_URL.
 const DEFAULT_PIZZA_VIDEO_URL =
-  "https://cdn.coverr.co/videos/coverr-melting-cheese-pizza-2988/1080p.mp4";
+  "https://videos.openai.com/vg-assets/assets%2Ftask_01k75dw4hcfb1tmte3mjmmeba4%2Ftask_01k75dw4hcfb1tmte3mjmmeba4_genid_dd080f2b-26b2-461f-8c61-651674dc3e3a_25_10_09_21_26_340602%2Fvideos%2F00000_402619027%2Fsource.mp4?se=2025-10-10T01%3A27%3A20Z&sp=r&sv=2024-08-04&sr=b&skoid=8b872fb2-b44b-4c1d-9ff6-1d4509d19e6e&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-10-09T21%3A13%3A27Z&ske=2025-10-09T22%3A23%3A27Z&sks=b&skv=2024-08-04&sig=BSzXN7jo/Ogs7ltxo%2BUj0ay1JwBTLqhtjYxmfUiqH0c%3D&az=oaivgprodscus";
 
 type PizzazWidget = {
   id: string;
@@ -90,9 +90,17 @@ ${extraScript}
 }
 
 function inlineWidgetHtml(assetName: string): string | undefined {
+  const cssPath = resolve(assetsDir, `${assetName}-${assetHash}.css`);
+  const jsPath = resolve(assetsDir, `${assetName}-${assetHash}.js`);
+
+  // If either file is missing, silently skip inlining and allow CDN/dev fallback.
+  if (!existsSync(cssPath) || !existsSync(jsPath)) {
+    return undefined;
+  }
+
   try {
-    const css = readFileSync(resolve(assetsDir, `${assetName}-${assetHash}.css`), "utf8");
-    const js = readFileSync(resolve(assetsDir, `${assetName}-${assetHash}.js`), "utf8");
+    const css = readFileSync(cssPath, "utf8");
+    const js = readFileSync(jsPath, "utf8");
 
     const extraScript = assetName === "pizzaz-video"
       ? `<script>window.__PIZZAZ_VIDEO_URL__ = ${JSON.stringify(process.env.PIZZAZ_VIDEO_URL ?? DEFAULT_PIZZA_VIDEO_URL)};<\/script>`
@@ -109,8 +117,13 @@ ${js}
 ${extraScript}
     `.trim();
   } catch (error) {
-    const message = (error as NodeJS.ErrnoException).message ?? String(error);
-    console.warn(`Failed to load local assets for ${assetName}: ${message}. Falling back to CDN.`);
+    const err = error as NodeJS.ErrnoException;
+    // Only warn on unexpected read errors; ENOENT is already handled above.
+    if (err.code !== "ENOENT") {
+      console.warn(
+        `Failed to inline local assets for ${assetName}: ${err.message}. Falling back to CDN.`,
+      );
+    }
     return undefined;
   }
 }
