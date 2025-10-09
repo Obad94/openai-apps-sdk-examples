@@ -66,3 +66,7 @@ Other env vars:
 
 - `$env:TEMPLATE_VERSION = 'dev1'` – cache-busts template URIs
 - `$env:PIZZAZ_VIDEO_URL = 'https://...'` – override default video for `pizzaz-video`
+
+### .env support (per server)
+
+You can create a `.env` file next to this README (see `.env.example`) to store these variables for Python. OS env always wins over `.env`. We intentionally don’t use a root-level `.env`.

@@ -54,3 +54,7 @@ Other useful env vars:
 
 - `$env:TEMPLATE_VERSION = 'dev1'` – cache-busts template URIs in ChatGPT
 - `$env:PIZZAZ_VIDEO_URL = 'https://...'` – override default video used by `pizzaz-video` widget
+
+### .env support (per server)
+
+You can create a `.env` file next to this README (see `.env.example`) to store these variables for Node. OS env always wins over `.env`. We intentionally don’t use a root-level `.env`.

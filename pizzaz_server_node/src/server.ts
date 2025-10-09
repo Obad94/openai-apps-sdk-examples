@@ -5,6 +5,7 @@ import { URL, fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import 'dotenv/config';
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   CallToolRequestSchema,

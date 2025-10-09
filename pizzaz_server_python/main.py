@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import hashlib
+from dotenv import load_dotenv
 import json
 import logging
 import os
@@ -24,6 +25,12 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 logger = logging.getLogger(__name__)
+
+# Load .env from this server directory if present, with OS env taking precedence
+try:
+    load_dotenv(REPO_ROOT / "pizzaz_server_python" / ".env")
+except Exception:
+    pass
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
