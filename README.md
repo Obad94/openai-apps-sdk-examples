@@ -28,19 +28,58 @@ The MCP servers in this demo highlight how each tool can light up widgets by com
 - `solar-system_server_python/` – Python MCP server for the 3D solar system widget.
 - `build-all.mts` – Vite build orchestrator that produces hashed bundles for every widget entrypoint.
 
-## Available Servers
+## Prerequisites
 
-### Pizzaz (Node & Python)
-- 5 pizza-themed widget tools (map, carousel, albums, list, video)
-- See [pizzaz_server_node/README.md](pizzaz_server_node/README.md) or [pizzaz_server_python/README.md](pizzaz_server_python/README.md)
+- Node.js 18+
+- pnpm (recommended) or npm/yarn
+- Python 3.10+ (for the Python MCP server)
 
-### Solar System (Python)
-- 3D solar system visualization widget
-- See [solar-system_server_python/README.md](solar-system_server_python/README.md)
+## Install dependencies
 
-## Quick Start
+Clone the repository and install the workspace dependencies:
 
-### Pizzaz (Node)
+```bash
+pnpm install
+```
+
+> Using npm or yarn? Install the root dependencies with your preferred client and adjust the commands below accordingly.
+
+## Build the components gallery
+
+The components are bundled into standalone assets that the MCP servers serve as reusable UI resources.
+
+```bash
+pnpm run build
+```
+
+This command runs `build-all.mts`, producing versioned `.html`, `.js`, and `.css` files inside `assets/`. Each widget is wrapped with the CSS it needs so you can host the bundles directly or ship them with your own server. If the local assets are missing at runtime, the Pizzaz MCP server automatically falls back to the CDN bundles (version `0038`).
+
+To iterate locally, you can also launch the Vite dev server:
+
+```bash
+pnpm run dev
+```
+
+## Serve the static assets
+
+If you want to preview the generated bundles without the MCP servers, start the static file server after running a build:
+
+```bash
+pnpm run serve
+```
+
+The assets are exposed at [`http://localhost:4444`](http://localhost:4444) with CORS enabled so that local tooling (including MCP inspectors) can fetch them.
+
+## Run the MCP servers
+
+The repository ships several demo MCP servers that highlight different widget bundles:
+
+- **Pizzaz (Node & Python)** – pizza-inspired collection of tools and components
+- **Solar system (Python)** – 3D solar system viewer
+
+Every tool response includes plain text content, structured JSON, and `_meta.openai/outputTemplate` metadata so the Apps SDK can hydrate the matching widget.
+
+### Pizzaz Node server
 
 ```bash
 cd pizzaz_server_node
@@ -48,104 +87,49 @@ pnpm install
 pnpm start
 ```
 
-### Pizzaz (Python)
+- For hot reload during development, run `pnpm run dev` in the repo root and set `$env:ENVIRONMENT='local'` (PowerShell) or `export ENVIRONMENT=local` (Unix) before starting the server so it consumes the dev assets without hash suffixes.
+- After running `pnpm run build` and `pnpm run serve`, start the server with `$env:ENVIRONMENT='production'` / `$env:DOMAIN='http://localhost:4444'` (PowerShell) or their `export` equivalents to point at the local static asset server.
+- The server listens on `http://localhost:8000/mcp` by default; override the port with `$env:PORT='<port>'` or `export PORT=<port>` if needed.
+
+### Pizzaz Python server
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate    # Unix/Mac
 pip install -r pizzaz_server_python/requirements.txt
-pnpm start:pizzaz-python
+uvicorn pizzaz_server_python.main:app --port 8000
 ```
 
-> Prefer calling Python directly? Replace the last line with `python pizzaz_server_python/main.py`.
+> Prefer pnpm scripts? After activating the virtual environment, you can start the server with `pnpm start:pizzaz-python`.
 
-### Solar System (Python)
+### Solar system Python server
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate    # Unix/Mac
 pip install -r solar-system_server_python/requirements.txt
-pnpm start:solar-python
+uvicorn solar-system_server_python.main:app --port 8000
 ```
 
-> Swap the final command with `python solar-system_server_python/main.py` if you want to invoke Python yourself.
+> Similarly, `pnpm start:solar-python` wraps the uvicorn command once the environment is ready.
 
-### Test in ChatGPT
+You can reuse the same virtual environment for all Python servers—install the dependencies once and run whichever entry point you need.
 
-Enable [developer mode](https://platform.openai.com/docs/guides/developer-mode) and add the MCP server in Settings → Connectors. To share your local instance, expose it with a tunnel such as ngrok:
+## Testing in ChatGPT
+
+To add these apps to ChatGPT, enable [developer mode](https://platform.openai.com/docs/guides/developer-mode), and add your apps in Settings > Connectors.
+
+To add your local server without deploying it, you can use a tool like [ngrok](https://ngrok.com/) to expose your local server to the internet.
+
+For example, once your MCP servers are running, you can run:
 
 ```bash
 ngrok http 8000
 ```
 
-Use the generated URL (for example `https://<custom_endpoint>.ngrok-free.app/mcp`) when configuring ChatGPT.
+Use the generated URL (for example `https://<custom_endpoint>.ngrok-free.app/mcp`) when configuring ChatGPT. All of the demo servers listen on `http://localhost:8000/mcp` by default; adjust the port in the command above if you override it.
 
-All of the demo servers listen on `http://localhost:8000/mcp` by default. See each server’s README for environment variable options and additional workflows.
-
-## Advanced Setup
-
-### Prerequisites
-
-- Node.js 18+
-- pnpm (recommended) or npm/yarn
-- Python 3.10+ (for Python servers)
-
-### Building Widgets Locally
-
-Install root dependencies:
-```bash
-pnpm install
-```
-
-Build widgets:
-```bash
-pnpm run build
-```
-
-This produces versioned `.html`, `.js`, and `.css` files in `assets/` with hashed filenames.
-
-### Development Mode (Hot Reload)
-
-Terminal 1 - Start Vite dev server:
-```bash
-pnpm run dev
-```
-
-Terminal 2 - Start MCP server with dev mode:
-```bash
-# Windows PowerShell
-$env:ENVIRONMENT = 'local'
-pnpm start:pizzaz-node
-
-# Unix/Mac
-export ENVIRONMENT=local
-pnpm start:pizzaz-node
-```
-
-Widgets refresh automatically on file changes.
-
-### Serve Local Build
-
-Build and serve static assets:
-```bash
-pnpm run build
-pnpm run serve
-```
-
-Start server with local assets:
-```bash
-# Windows PowerShell
-$env:ENVIRONMENT = 'production'
-$env:DOMAIN = 'http://localhost:4444'
-pnpm start:pizzaz-node
-
-# Unix/Mac
-export ENVIRONMENT=production
-export DOMAIN=http://localhost:4444
-pnpm start:pizzaz-node
-```
-
-## Next Steps
+## Next steps
 
 - Customize the widget data: edit the handlers in `pizzaz_server_node/src`, `pizzaz_server_python/main.py`, or the solar system server to fetch data from your systems.
 - Create your own components and add them to the gallery: drop new entries into `src/` and they will be picked up automatically by the build script.
