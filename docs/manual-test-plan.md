@@ -2,11 +2,12 @@
 
 ## Context
 
-The branch `docs/template-uri-access` refreshes the developer experience documented in every README:
+The branch `docs/template-uri-access` refreshes the developer experience documented in every README and tightens the asset delivery story:
 
 - Root `README.md` now centers on repository prerequisites, build tooling, static asset serving, and launching the MCP servers with configuration sourced from per-server `.env` files.
 - Server-specific READMEs (Node + Python) highlight identical environment flags (`ENVIRONMENT`, `DOMAIN`, `PORT`), hashed asset workflows, and optional pnpm wrappers for Python entry points.
 - Scripts such as `scripts/run-python-server.mjs`, `pnpm run dev`, and `pnpm run serve` provide the canonical way to reproduce widget assets locally.
+- The Pizzaz video widget now ships as a first-class bundle, with both servers injecting a fallback video URL and appending consistent version hashes in dev and production modes.
 
 The test cases below validate those instructions end-to-end. Record **Pass** or **Fail** for each scenario in `docs/manual-test-results.md` (ignored by git).
 
@@ -59,5 +60,5 @@ Create `docs/manual-test-results.md` (ignored by git) and copy the table above. 
 
 ## Exit Criteria
 
-- All tests TS-001 through TS-016 must pass on Windows and at least one Linux distro.
+- All tests TS-001 through TS-019 must pass on Windows and at least one Linux distro.
 - Document any failure with reproduction steps, logs, and recommended fixes before release.
