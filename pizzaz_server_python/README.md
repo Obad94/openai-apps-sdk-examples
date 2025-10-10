@@ -29,7 +29,12 @@ pip install -r requirements.txt
 python main.py
 ```
 
-This boots a FastAPI app with uvicorn on `http://127.0.0.1:8000` (equivalently `uvicorn pizzaz_server_python.main:app --port 8000`). The process loads configuration from `.env` in this directory. Update it to control asset origin and port selection, for example:
+This boots a FastAPI app with uvicorn on `http://127.0.0.1:8000` (equivalently `uvicorn pizzaz_server_python.main:app --port 8000`). The endpoints mirror the Node demo:
+
+- `GET /mcp` exposes the SSE stream.
+- `POST /mcp/messages?sessionId=...` accepts follow-up messages for an active session.
+
+Cross-origin requests are allowed so you can drive the server from local tooling or the MCP Inspector. The process loads configuration from `.env` in this directory. Update it to control asset origin and port selection, for example:
 
 ```env
 # Use the Vite dev server started in the repo root with `pnpm run dev`
