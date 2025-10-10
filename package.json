@@ -14,8 +14,8 @@
     "tsc:node": "tsc -p tsconfig.node.json",
     "dev:host": "vite --config vite.host.config.mts",
     "start:pizzaz-node": "pnpm -C pizzaz_server_node start",
-    "start:pizzaz-python": "python pizzaz_server_python/main.py",
-    "start:solar-python": "python solar-system_server_python/main.py"
+    "start:pizzaz-python": "node ./scripts/run-python-server.mjs pizzaz_server_python/main.py",
+    "start:solar-python": "node ./scripts/run-python-server.mjs solar-system_server_python/main.py"
   },
   "keywords": [],
   "author": "",

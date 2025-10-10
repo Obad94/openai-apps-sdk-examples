@@ -72,6 +72,7 @@ _dev_asset_hashed = not _is_env_local
 
 _asset_hash = DEFAULT_ASSET_HASH
 
+# In dev with un-hashed assets, derive a version tag from the process start minute
 _is_dev_unhashed = bool(_dev_asset_origin) and (not _dev_asset_hashed)
 _auto_dev_version = None
 if _is_dev_unhashed:
@@ -84,10 +85,8 @@ _template_version = (
 ).lower()
 _version_suffix = f"?v={_template_version}" if _template_version else ""
 
-# Default pizza video (provided by user).
-DEFAULT_PIZZA_VIDEO_URL = (
-    "https://videos.openai.com/vg-assets/assets%2Ftask_01k75dw4hcfb1tmte3mjmmeba4%2Ftask_01k75dw4hcfb1tmte3mjmmeba4_genid_dd080f2b-26b2-461f-8c61-651674dc3e3a_25_10_09_21_26_340602%2Fvideos%2F00000_402619027%2Fsource.mp4?se=2025-10-10T01%3A27%3A20Z&sp=r&sv=2024-08-04&sr=b&skoid=8b872fb2-b44b-4c1d-9ff6-1d4509d19e6e&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-10-09T21%3A13%3A27Z&ske=2025-10-09T22%3A23%3A27Z&sks=b&skv=2024-08-04&sig=BSzXN7jo/Ogs7ltxo%2BUj0ay1JwBTLqhtjYxmfUiqH0c%3D&az=oaivgprodscus"
-)
+# Default pizza video (public-domain fallback that does not expire).
+DEFAULT_PIZZA_VIDEO_URL = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
 
 VIDEO_URL_SCRIPT = f"<script>window.__PIZZAZ_VIDEO_URL__ = {json.dumps(DEFAULT_PIZZA_VIDEO_URL)};</script>"
 

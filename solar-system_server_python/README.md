@@ -19,10 +19,12 @@ pip install -r requirements.txt
 
 > **Note:** The official MCP package is named `mcp` (not `modelcontextprotocol`). If you previously installed the unrelated `modelcontextprotocol` package, run `pip uninstall modelcontextprotocol` first.
 
-**Run:**
+**Run (cross-platform launcher):**
 ```bash
-python main.py
+pnpm start:solar-python
 ```
+
+> Equivalent to running `python main.py` once your Python environment is activated.
 
 Server runs at `http://localhost:8000/mcp` with CDN-hosted widgets.
 
@@ -58,11 +60,11 @@ Terminal 2 - Start MCP server:
 ```bash
 # Windows PowerShell
 $env:ENVIRONMENT = 'local'
-python main.py
+pnpm start:solar-python
 
 # Unix/Mac
 export ENVIRONMENT=local
-python main.py
+pnpm start:solar-python
 ```
 
 Widgets auto-refresh on file changes. Template version auto-bumps every minute for cache refresh.
@@ -80,18 +82,18 @@ Start server with local assets:
 # Windows PowerShell
 $env:ENVIRONMENT = 'production'
 $env:DOMAIN = 'http://localhost:4444'
-python main.py
+pnpm start:solar-python
 
 # Unix/Mac
 export ENVIRONMENT=production
 export DOMAIN=http://localhost:4444
-python main.py
+pnpm start:solar-python
 ```
 
 ### CDN Only (Default)
 
 ```bash
-python main.py
+pnpm start:solar-python
 ```
 
 No configuration needed. Uses published CDN version.

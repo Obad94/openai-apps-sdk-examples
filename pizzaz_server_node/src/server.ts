@@ -59,16 +59,16 @@ const computedAssetHash = crypto
 
 const assetHash = computedAssetHash.toLowerCase();
 
-// In dev with un-hashed assets, auto-bump once per minute
+// In dev with un-hashed assets, derive a version tag from the process start minute
 const isDevUnhashed = Boolean(devAssetOrigin) && !devAssetUseHash;
 const autoDevVersion = isDevUnhashed
   ? `dev-${Math.floor(Date.now() / 60_000).toString(36)}`
   : undefined;
 const templateVersion = (autoDevVersion ?? assetHash).toLowerCase();
 
-// Default pizza video (provided by user).
+// Default pizza video (public-domain fallback that does not expire).
 const DEFAULT_PIZZA_VIDEO_URL =
-  "https://videos.openai.com/vg-assets/assets%2Ftask_01k75dw4hcfb1tmte3mjmmeba4%2Ftask_01k75dw4hcfb1tmte3mjmmeba4_genid_dd080f2b-26b2-461f-8c61-651674dc3e3a_25_10_09_21_26_340602%2Fvideos%2F00000_402619027%2Fsource.mp4?se=2025-10-10T01%3A27%3A20Z&sp=r&sv=2024-08-04&sr=b&skoid=8b872fb2-b44b-4c1d-9ff6-1d4509d19e6e&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-10-09T21%3A13%3A27Z&ske=2025-10-09T22%3A23%3A27Z&sks=b&skv=2024-08-04&sig=BSzXN7jo/Ogs7ltxo%2BUj0ay1JwBTLqhtjYxmfUiqH0c%3D&az=oaivgprodscus";
+  "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
 
 const videoScriptSnippet = `<script>window.__PIZZAZ_VIDEO_URL__ = ${JSON.stringify(DEFAULT_PIZZA_VIDEO_URL)};<\/script>`;
 

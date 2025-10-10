@@ -31,6 +31,9 @@ pip install -r pizzaz_server_python/requirements.txt
 python pizzaz_server_python/main.py
 ```
 
+> Prefer a one-liner? After installing requirements you can run `pnpm start:pizzaz-python`. The helper script
+> auto-detects the right Python executable on Windows, macOS, and Linux.
+
 **Python Server (Solar System):**
 ```bash
 # Windows
@@ -45,6 +48,8 @@ source .venv/bin/activate
 pip install -r solar-system_server_python/requirements.txt
 python solar-system_server_python/main.py
 ```
+
+> Or use `pnpm start:solar-python` after installing dependencies—the launcher works across operating systems.
 
 Server runs at `http://localhost:8000/mcp` using CDN-hosted widgets (zero configuration required).
 

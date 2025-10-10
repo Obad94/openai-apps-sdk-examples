@@ -65,7 +65,7 @@ _dev_asset_hashed = not _is_env_local
 
 _asset_hash = _default_asset_hash
 
-# Auto-bump template version in dev un-hashed mode if unset
+# Derive a version tag from the process start minute when serving un-hashed dev assets
 _is_dev_unhashed = bool(_dev_asset_origin) and (not _dev_asset_hashed)
 _auto_dev_version = None
 if _is_dev_unhashed:
