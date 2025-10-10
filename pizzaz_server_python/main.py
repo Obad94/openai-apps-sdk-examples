@@ -13,6 +13,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
+import re
 
 import hashlib
 from dotenv import load_dotenv
@@ -43,6 +44,27 @@ with (REPO_ROOT / "package.json").open("r", encoding="utf-8") as package_file:
 DEFAULT_ASSET_HASH = hashlib.sha256(_package_version.encode("utf-8")).hexdigest()[:4]
 
 
+def _discover_asset_hash() -> str | None:
+    try:
+        candidates = sorted(
+            ASSETS_DIR.glob("*.js"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+    except FileNotFoundError:
+        return None
+    except OSError as exc:  # pragma: no cover
+        logger.warning("Failed to scan assets directory for hash: %s", exc)
+        return None
+
+    pattern = re.compile(r"^[a-z0-9-]+-([0-9a-f]{4})\.js$")
+    for candidate in candidates:
+        match = pattern.match(candidate.name)
+        if match:
+            return match.group(1)
+    return None
+
+
 def _get_env(key: str) -> str | None:
     return os.environ.get(key)
 
@@ -70,7 +92,8 @@ else:
 # When using the Vite dev server (`pnpm run dev`), assets are served without the hash suffix
 _dev_asset_hashed = not _is_env_local
 
-_asset_hash = DEFAULT_ASSET_HASH
+asset_hash_override = (_get_env("ASSET_HASH") or "").strip().lower()
+_asset_hash = asset_hash_override or (_discover_asset_hash() or DEFAULT_ASSET_HASH).lower()
 
 # In dev with un-hashed assets, derive a version tag from the process start minute
 _is_dev_unhashed = bool(_dev_asset_origin) and (not _dev_asset_hashed)
@@ -165,6 +188,13 @@ def _build_widget_markup(asset_name: str) -> str:
     if dev_markup is not None:
         logger.info("Serving %s from dev asset origin %s", asset_name, _dev_asset_origin)
         return dev_markup
+
+    if not ENVIRONMENT:
+        logger.info(
+            "No ENVIRONMENT specified; falling back to CDN assets for %s",
+            asset_name,
+        )
+        return _cdn_widget_markup(asset_name)
 
     inline = _inline_widget_markup(asset_name)
     if inline is not None:
@@ -463,4 +493,4 @@ if __name__ == "__main__":
         _port = int(PORT or "8000")
     except Exception:
         _port = 8000
-    uvicorn.run("pizzaz_server_python.main:app", host="0.0.0.0", port=_port)
+    uvicorn.run(app, host="0.0.0.0", port=_port)

@@ -50,7 +50,7 @@ ENVIRONMENT=local
 
 - When `ENVIRONMENT=local`, widgets hydrate from the running Vite dev server without hashed filenames.
 - When `ENVIRONMENT=production` alongside a `DOMAIN`, widgets load from your local static server.
-- If neither local source is available, the server falls back to the CDN assets (version `0038`).
+- When `ENVIRONMENT` is omitted entirely, the server now defaults to the CDN assets (version `0038`) just like the Node implementation.
 - Each tool response includes confirmation text, structured JSON echoing the requested topping, and `_meta.openai/outputTemplate` metadata for the Skybridge widget.
 
 Prefer a cross-platform launcher? After activating the environment you can run:

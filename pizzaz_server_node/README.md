@@ -44,7 +44,7 @@ Key behaviors:
 
 - When `ENVIRONMENT=local`, widgets load from the Vite dev server (`pnpm run dev` from the repo root) without hashed filenames.
 - When `ENVIRONMENT=production` and `DOMAIN` is set, widgets are served from your local static server (typically `pnpm run serve`).
-- If neither local option provides assets, the server falls back to the CDN bundles (version `0038`).
+- When `ENVIRONMENT` is omitted entirely—or neither local option provides assets—the server falls back to the CDN bundles (version `0038`).
 - Each tool emits:
 	- `content`: confirmation text matching the requested action.
 	- `structuredContent`: JSON reflecting the requested topping.

@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, Dirent } from "node:fs";
 import { resolve } from "node:path";
 import { URL, fileURLToPath } from "node:url";
 import crypto from "node:crypto";
@@ -51,13 +51,39 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(__dirname, "../../");
 const assetsDir = resolve(repoRoot, "assets");
 
+function discoverAssetHash(dir: string): string | undefined {
+  let entries: Dirent[];
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    if (err.code !== "ENOENT") {
+      console.warn(`Failed to scan assets directory for hash: ${err.message}`);
+    }
+    return undefined;
+  }
+
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const match = entry.name.match(/^[a-z0-9-]+-([0-9a-f]{4})\.(?:js|css|html)$/);
+    if (match) {
+      return match[1];
+    }
+  }
+  return undefined;
+}
+
 const computedAssetHash = crypto
   .createHash("sha256")
   .update((pkg as { version: string }).version, "utf8")
   .digest("hex")
   .slice(0, 4);
 
-const assetHash = computedAssetHash.toLowerCase();
+const assetHash = (
+  process.env.ASSET_HASH?.trim().toLowerCase() ||
+  discoverAssetHash(assetsDir) ||
+  computedAssetHash
+).toLowerCase();
 
 // In dev with un-hashed assets, derive a version tag from the process start minute
 const isDevUnhashed = Boolean(devAssetOrigin) && !devAssetUseHash;
@@ -161,7 +187,17 @@ ${extraScript}
 }
 
 function buildWidgetHtml(assetName: string): string {
-  return devHostedWidgetHtml(assetName) ?? inlineWidgetHtml(assetName) ?? cdnWidgetHtml(assetName);
+  const devHtml = devHostedWidgetHtml(assetName);
+  if (devHtml) {
+    return devHtml;
+  }
+
+  if (!ENVIRONMENT) {
+    console.info(`No ENVIRONMENT set; falling back to CDN assets for ${assetName}`);
+    return cdnWidgetHtml(assetName);
+  }
+
+  return inlineWidgetHtml(assetName) ?? cdnWidgetHtml(assetName);
 }
 
 const widgetConfigs: WidgetConfig[] = [

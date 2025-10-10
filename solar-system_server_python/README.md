@@ -50,7 +50,7 @@ ENVIRONMENT=local
 
 - When `ENVIRONMENT=local`, the widget hydrates from the Vite dev server without hashed filenames.
 - When `ENVIRONMENT=production` with a `DOMAIN`, assets are served from your local static server.
-- Missing local assets trigger the CDN fallback (version `0038`).
+- When `ENVIRONMENT` is omitted entirely—or local assets are missing—the server defaults to the CDN bundles (version `0038`).
 - Each tool call returns a JSON payload describing the requested planet plus metadata that embeds the solar-system widget so the Apps SDK can render the 3D experience inline.
 
 Prefer not to type the Python entry point directly? After activating the environment you can run:

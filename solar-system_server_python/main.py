@@ -9,6 +9,7 @@ import json
 import time
 from dotenv import load_dotenv
 from typing import Any, Dict, List
+import re
 
 import mcp.types as types
 from mcp.server.fastmcp import FastMCP
@@ -63,7 +64,30 @@ else:
 # When using the Vite dev server (`pnpm run dev`), assets are served without the hash suffix
 _dev_asset_hashed = not _is_env_local
 
-_asset_hash = _default_asset_hash
+def _discover_asset_hash() -> str | None:
+    try:
+        candidates = sorted(
+            ASSETS_DIR.glob("solar-system-*.js"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+    except FileNotFoundError:
+        return None
+    except OSError:
+        return None
+
+    pattern = re.compile(r"^solar-system-([0-9a-f]{4})\.js$")
+    for candidate in candidates:
+        match = pattern.match(candidate.name)
+        if match:
+            return match.group(1)
+    return None
+
+
+_asset_hash = (
+    (_get_env("ASSET_HASH") or "").strip().lower()
+    or (_discover_asset_hash() or _default_asset_hash).lower()
+)
 
 # Derive a version tag from the process start minute when serving un-hashed dev assets
 _is_dev_unhashed = bool(_dev_asset_origin) and (not _dev_asset_hashed)
@@ -147,6 +171,13 @@ def _solar_widget_html() -> str:
             '<div id="solar-system-root"></div>\n'
             f'<link rel="stylesheet" href="{css_href}">\n'
             f'<script type="module" src="{js_src}"></script>'
+        )
+
+    if not ENVIRONMENT:
+        return (
+            '<div id="solar-system-root"></div>\n'
+            f'<link rel="stylesheet" href="{CDN_BASE}/solar-system-{CDN_VERSION}.css">\n'
+            f'<script type="module" src="{CDN_BASE}/solar-system-{CDN_VERSION}.js"></script>'
         )
 
     # Inline local hashed assets when available
@@ -317,7 +348,7 @@ async def _handle_read_resource(req: types.ReadResourceRequest) -> types.ServerR
     ]
 
     return types.ServerResult(
-        types.ReadResourceResult(contents=contents)  # type: ignore[arg-type]
+        types.ReadResourceResult(contents=contents)  # type: ignore[arg-type,call-arg]
     )
 
 
@@ -335,7 +366,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
                     )
                 ],
                 isError=True,
-            )
+            )  # type: ignore[call-arg]
         )
 
     planet = _normalize_planet(payload.planet_name)
@@ -352,7 +383,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
                     )
                 ],
                 isError=True,
-            )
+            )  # type: ignore[call-arg]
         )
 
     widget_resource = _embedded_widget_resource(WIDGET)
@@ -383,7 +414,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
             ],
             structuredContent=structured,
             _meta=meta,
-        )
+        )  # type: ignore[call-arg]
     )
 
 
@@ -412,4 +443,4 @@ if __name__ == "__main__":
         _port = int(PORT or "8000")
     except Exception:
         _port = 8000
-    uvicorn.run("solar-system_server_python.main:app", host="0.0.0.0", port=_port)
+    uvicorn.run(app, host="0.0.0.0", port=_port)

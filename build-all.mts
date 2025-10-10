@@ -145,9 +145,11 @@ const outputs = fs
 
 const renamed = [];
 
+const buildSalt = process.env.BUILD_SALT ?? new Date().toISOString();
+
 const h = crypto
   .createHash("sha256")
-  .update(pkg.version, "utf8")
+  .update(`${pkg.version}:${buildSalt}`, "utf8")
   .digest("hex")
   .slice(0, 4);
 
