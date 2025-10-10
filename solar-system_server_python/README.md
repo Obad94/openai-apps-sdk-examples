@@ -1,10 +1,14 @@
-# Solar System MCP Server (Python)
+# Solar system MCP server (Python)
 
-MCP server implementation using the official Python SDK (FastMCP). Exposes a 3D solar system visualization widget for ChatGPT.
+This directory packages a Python implementation of the solar-system demo server using the official Model Context Protocol FastMCP helper. It mirrors the widget experience shipped in this repository and shares configuration through a local `.env` file while falling back to the published CDN bundles whenever local assets are unavailable.
 
-## Quick Start
+## Prerequisites
 
-**Install:**
+- Python 3.10+
+- A virtual environment (recommended)
+
+## Installation
+
 ```bash
 # Windows
 python -m venv .venv
@@ -17,99 +21,51 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> **Note:** The official MCP package is named `mcp` (not `modelcontextprotocol`). If you previously installed the unrelated `modelcontextprotocol` package, run `pip uninstall modelcontextprotocol` first.
+> The requirements pin the official `mcp` distribution with its FastAPI extra. If you previously installed the unrelated `modelcontextprotocol` package, uninstall it first to avoid import conflicts.
 
-**Run (cross-platform launcher):**
+## Run the server
+
 ```bash
-pnpm start:solar-python
+python main.py
 ```
 
-> Equivalent to running `python main.py` once your Python environment is activated.
+This boots a FastAPI app with uvicorn on `http://127.0.0.1:8000` (equivalently `uvicorn solar-system_server_python.main:app --port 8000`). The server exposes streaming endpoints compatible with the MCP Inspector and ChatGPT connectors:
 
-Server runs at `http://localhost:8000/mcp` with CDN-hosted widgets.
+- `GET /mcp` provides the SSE stream.
+- `POST /mcp/messages?sessionId=...` receives follow-up messages for a session.
 
-## Available Tools
+Configuration lives in `.env` in this directory. Update it before launching to control asset origin and port selection:
 
-- **solar-system** - 3D interactive solar system visualization
+```env
+# Use the Vite dev server started with `pnpm run dev`
+ENVIRONMENT=local
 
-The tool returns:
-- Text confirmation with planet information
-- Structured JSON data about the requested planet
-- Widget metadata for ChatGPT to render the 3D UI
+# After `pnpm run build && pnpm run serve`, point to the static bundles
+# ENVIRONMENT=production
+# DOMAIN=http://localhost:4444
 
-## Configuration
-
-Create a `.env` file (see `.env.example`) or set OS environment variables:
-
-- `ENVIRONMENT`: `'local'` or `'production'` (default: `'production'`)
-- `DOMAIN`: Asset origin URL (optional)
-- `PORT`: Server port (default: `8000`)
-
-**All variables are optional.** With zero configuration, the server uses CDN assets.
-
-## Development Workflows
-
-### Hot Reload (Dev Mode)
-
-Terminal 1 - Start Vite dev server (from repo root):
-```bash
-pnpm dev
+# Change the default port (defaults to 8000)
+# PORT=8123
 ```
 
-Terminal 2 - Start MCP server:
-```bash
-# Windows PowerShell
-$env:ENVIRONMENT = 'local'
-pnpm start:solar-python
+- When `ENVIRONMENT=local`, the widget hydrates from the Vite dev server without hashed filenames.
+- When `ENVIRONMENT=production` with a `DOMAIN`, assets are served from your local static server.
+- Missing local assets trigger the CDN fallback (version `0038`).
+- Each tool call returns a JSON payload describing the requested planet plus metadata that embeds the solar-system widget so the Apps SDK can render the 3D experience inline.
 
-# Unix/Mac
-export ENVIRONMENT=local
-pnpm start:solar-python
-```
-
-Widgets auto-refresh on file changes. Template version auto-bumps every minute for cache refresh.
-
-### Serve Local Build
-
-From repo root:
-```bash
-pnpm build
-pnpm serve
-```
-
-Start server with local assets:
-```bash
-# Windows PowerShell
-$env:ENVIRONMENT = 'production'
-$env:DOMAIN = 'http://localhost:4444'
-pnpm start:solar-python
-
-# Unix/Mac
-export ENVIRONMENT=production
-export DOMAIN=http://localhost:4444
-pnpm start:solar-python
-```
-
-### CDN Only (Default)
+Prefer not to type the Python entry point directly? After activating the environment you can run:
 
 ```bash
 pnpm start:solar-python
 ```
 
-No configuration needed. Uses published CDN version.
+## Next steps
 
-## Alternative Run Command
-
-You can also run the server using uvicorn directly:
-```bash
-uvicorn solar-system_server_python.main:app --port 8000
-```
-
-## Next Steps
+- Expand the schema with additional celestial bodies or mission telemetry.
+- Source live ephemeris data to position planets in real time.
+- Gate access with authentication before exposing the widget in production.
 
 See main [README.md](../README.md) for:
 - Testing in ChatGPT
 - Architecture overview
 - Advanced configuration
-
-Customize the solar system data by editing the handlers in `main.py` to fetch real ephemeris data or add authentication.

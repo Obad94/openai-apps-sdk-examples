@@ -79,6 +79,24 @@ The repository ships several demo MCP servers that highlight different widget bu
 
 Every tool response includes plain text content, structured JSON, and `_meta.openai/outputTemplate` metadata so the Apps SDK can hydrate the matching widget.
 
+All MCP servers read `ENVIRONMENT`, `DOMAIN`, and `PORT` from a `.env` file at the repository root (loaded via `dotenv`). Instead of exporting shell variables, create or update that file before starting a server. For example:
+
+```env
+# Development: consume Vite dev assets on http://localhost:5173
+ENVIRONMENT=local
+
+# Production-style: point to the static asset server started with `pnpm run serve`
+# ENVIRONMENT=production
+# DOMAIN=http://localhost:4444
+
+# Port override (defaults to 8000 when omitted)
+# PORT=8123
+```
+
+- Use `ENVIRONMENT=local` while `pnpm run dev` is serving assets so widgets load without hash suffixes.
+- Switch to `ENVIRONMENT=production` and set `DOMAIN` after running `pnpm run build` and `pnpm run serve` to reference the static bundles.
+- Adjust `PORT` if you need the MCP endpoint on something other than `http://localhost:8000/mcp`.
+
 ### Pizzaz Node server
 
 ```bash
@@ -86,10 +104,6 @@ cd pizzaz_server_node
 pnpm install
 pnpm start
 ```
-
-- For hot reload during development, run `pnpm run dev` in the repo root and set `$env:ENVIRONMENT='local'` (PowerShell) or `export ENVIRONMENT=local` (Unix) before starting the server so it consumes the dev assets without hash suffixes.
-- After running `pnpm run build` and `pnpm run serve`, start the server with `$env:ENVIRONMENT='production'` / `$env:DOMAIN='http://localhost:4444'` (PowerShell) or their `export` equivalents to point at the local static asset server.
-- The server listens on `http://localhost:8000/mcp` by default; override the port with `$env:PORT='<port>'` or `export PORT=<port>` if needed.
 
 ### Pizzaz Python server
 

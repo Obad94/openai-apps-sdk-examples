@@ -1,10 +1,14 @@
 # Pizzaz MCP Server (Python)
 
-MCP server implementation using the official Python SDK (FastMCP). Exposes 5 pizza-themed widget tools for ChatGPT.
+This directory packages a Python implementation of the Pizzaz demo server using the `FastMCP` helper from the official Model Context Protocol SDK. It mirrors the Node example and exposes each pizza widget as both a resource and a tool while sharing configuration through a local `.env` file and falling back to the published CDN bundles when needed.
 
-## Quick Start
+## Prerequisites
 
-**Install:**
+- Python 3.10+
+- A virtual environment (recommended)
+
+## Installation
+
 ```bash
 # Windows
 python -m venv .venv
@@ -17,99 +21,46 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> **Note:** The official MCP package is named `mcp` (not `modelcontextprotocol`). If you previously installed the unrelated `modelcontextprotocol` package, run `pip uninstall modelcontextprotocol` first.
+> **Heads up:** The official MCP package is named `mcp` (with a FastAPI extra). If you previously installed the unrelated `modelcontextprotocol` project from PyPI, run `pip uninstall modelcontextprotocol` before reinstalling the requirements.
 
-**Run (cross-platform launcher):**
+## Run the Server
+
 ```bash
-pnpm start:pizzaz-python
+python main.py
 ```
 
-> Equivalent to running `python main.py` after activating your virtual environment.
+This boots a FastAPI app with uvicorn on `http://127.0.0.1:8000` (equivalently `uvicorn pizzaz_server_python.main:app --port 8000`). The process loads configuration from `.env` in this directory. Update it to control asset origin and port selection, for example:
 
-Server runs at `http://localhost:8000/mcp` with CDN-hosted widgets.
+```env
+# Use the Vite dev server started in the repo root with `pnpm run dev`
+ENVIRONMENT=local
 
-## Available Tools
+# After `pnpm run build && pnpm run serve`, point to the static bundles
+# ENVIRONMENT=production
+# DOMAIN=http://localhost:4444
 
-- **pizza-map** - Interactive map of pizza places
-- **pizza-carousel** - Carousel of pizza images
-- **pizza-albums** - Pizza photo albums
-- **pizza-list** - List of pizza options
-- **pizza-video** - Pizza video player
-
-Each tool returns:
-- Text confirmation
-- Structured JSON data
-- Widget metadata for ChatGPT to render the UI
-
-## Configuration
-
-Create a `.env` file (see `.env.example`) or set OS environment variables:
-
-- `ENVIRONMENT`: `'local'` or `'production'` (default: `'production'`)
-- `DOMAIN`: Asset origin URL (optional)
-- `PORT`: Server port (default: `8000`)
-
-**All variables are optional.** With zero configuration, the server uses CDN assets.
-
-## Development Workflows
-
-### Hot Reload (Dev Mode)
-
-Terminal 1 - Start Vite dev server (from repo root):
-```bash
-pnpm dev
+# Change the default port (defaults to 8000)
+# PORT=8123
 ```
 
-Terminal 2 - Start MCP server:
-```bash
-# Windows PowerShell
-$env:ENVIRONMENT = 'local'
-pnpm start:pizzaz-python
+- When `ENVIRONMENT=local`, widgets hydrate from the running Vite dev server without hashed filenames.
+- When `ENVIRONMENT=production` alongside a `DOMAIN`, widgets load from your local static server.
+- If neither local source is available, the server falls back to the CDN assets (version `0038`).
+- Each tool response includes confirmation text, structured JSON echoing the requested topping, and `_meta.openai/outputTemplate` metadata for the Skybridge widget.
 
-# Unix/Mac
-export ENVIRONMENT=local
-pnpm start:pizzaz-python
-```
-
-Widgets auto-refresh on file changes. Template version auto-bumps every minute for cache refresh.
-
-### Serve Local Build
-
-From repo root:
-```bash
-pnpm build
-pnpm serve
-```
-
-Start server with local assets:
-```bash
-# Windows PowerShell
-$env:ENVIRONMENT = 'production'
-$env:DOMAIN = 'http://localhost:4444'
-pnpm start:pizzaz-python
-
-# Unix/Mac
-export ENVIRONMENT=production
-export DOMAIN=http://localhost:4444
-pnpm start:pizzaz-python
-```
-
-### CDN Only (Default)
+Prefer a cross-platform launcher? After activating the environment you can run:
 
 ```bash
 pnpm start:pizzaz-python
 ```
 
-No configuration needed. Uses published CDN version.
+## Next steps
 
-## Alternative Run Command
+Use these handlers as a starting point when wiring in real data, authentication, or localization support. The structure demonstrates how to:
 
-You can also run the server using uvicorn directly:
-```bash
-uvicorn pizzaz_server_python.main:app --port 8000
-```
-
-## Next Steps
+1. Register reusable UI resources that load static HTML bundles.
+2. Associate tools with those widgets via `_meta.openai/outputTemplate`.
+3. Ship structured JSON alongside human-readable confirmation text.
 
 See main [README.md](../README.md) for:
 - Testing in ChatGPT

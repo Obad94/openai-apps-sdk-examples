@@ -1,96 +1,58 @@
 # Pizzaz MCP Server (Node)
 
-MCP server implementation using the official TypeScript SDK. Exposes 5 pizza-themed widget tools for ChatGPT.
+This directory contains a minimal Model Context Protocol (MCP) server implemented with the official TypeScript SDK. The service exposes the five Pizzaz demo widgets and shares configuration with the rest of the workspace: it reads environment flags from a local `.env` file and automatically falls back to the published CDN bundles when local assets are unavailable.
 
-## Quick Start
+## Prerequisites
 
-**Install:**
+- Node.js 18+
+- pnpm, npm, or yarn for dependency management
+
+## Install dependencies
+
 ```bash
 pnpm install
 ```
 
-**Run:**
-```bash
-pnpm start
-```
+Adjust the command if you prefer npm or yarn.
 
-Server runs at `http://localhost:8000/mcp` with CDN-hosted widgets.
-
-## Available Tools
-
-- **pizza-map** - Interactive map of pizza places
-- **pizza-carousel** - Carousel of pizza images
-- **pizza-albums** - Pizza photo albums
-- **pizza-list** - List of pizza options
-- **pizza-video** - Pizza video player
-
-Each tool returns:
-- Text confirmation
-- Structured JSON data
-- Widget metadata for ChatGPT to render the UI
-
-## Configuration
-
-Create a `.env` file (see `.env.example`) or set OS environment variables:
-
-- `ENVIRONMENT`: `'local'` or `'production'` (default: `'production'`)
-- `DOMAIN`: Asset origin URL (optional)
-- `PORT`: Server port (default: `8000`)
-
-**All variables are optional.** With zero configuration, the server uses CDN assets.
-
-## Development Workflows
-
-### Hot Reload (Dev Mode)
-
-Terminal 1 - Start Vite dev server (from repo root):
-```bash
-pnpm dev
-```
-
-Terminal 2 - Start MCP server:
-```bash
-# Windows PowerShell
-$env:ENVIRONMENT = 'local'
-pnpm start
-
-# Unix/Mac
-export ENVIRONMENT=local
-pnpm start
-```
-
-Widgets auto-refresh on file changes. Template version auto-bumps every minute for cache refresh.
-
-### Serve Local Build
-
-From repo root:
-```bash
-pnpm build
-pnpm serve
-```
-
-Start server with local assets:
-```bash
-# Windows PowerShell
-$env:ENVIRONMENT = 'production'
-$env:DOMAIN = 'http://localhost:4444'
-pnpm start
-
-# Unix/Mac
-export ENVIRONMENT=production
-export DOMAIN=http://localhost:4444
-pnpm start
-```
-
-### CDN Only (Default)
+## Run the server
 
 ```bash
 pnpm start
 ```
 
-No configuration needed. Uses published CDN version.
+This launches an HTTP MCP server on `http://localhost:8000/mcp` with two endpoints:
+
+- `GET /mcp` provides the SSE stream.
+- `POST /mcp/messages?sessionId=...` accepts follow-up messages for active sessions.
+
+Configuration lives in `.env` within this directory (loaded automatically via `dotenv`). Update it before starting the server to control asset origins and ports. A typical file looks like:
+
+```env
+# Use the Vite dev server started with `pnpm run dev`
+ENVIRONMENT=local
+
+# After `pnpm run build && pnpm run serve`, point to the static bundles
+# ENVIRONMENT=production
+# DOMAIN=http://localhost:4444
+
+# Change the default port (defaults to 8000)
+# PORT=8123
+```
+
+Key behaviors:
+
+- When `ENVIRONMENT=local`, widgets load from the Vite dev server (`pnpm run dev` from the repo root) without hashed filenames.
+- When `ENVIRONMENT=production` and `DOMAIN` is set, widgets are served from your local static server (typically `pnpm run serve`).
+- If neither local option provides assets, the server falls back to the CDN bundles (version `0038`).
+- Each tool emits:
+	- `content`: confirmation text matching the requested action.
+	- `structuredContent`: JSON reflecting the requested topping.
+	- `_meta.openai/outputTemplate`: metadata binding the response to the Skybridge widget.
 
 ## Next Steps
+
+Extend these handlers with real data sources, authentication, or localization, and customize the widget configuration under `src/` to align with your application.
 
 See main [README.md](../README.md) for:
 - Testing in ChatGPT
