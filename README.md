@@ -108,24 +108,36 @@ pnpm start
 ### Pizzaz Python server
 
 ```bash
+cd pizzaz_server_python
 python -m venv .venv
-source .venv/bin/activate    # Unix/Mac
-pip install -r pizzaz_server_python/requirements.txt
-uvicorn pizzaz_server_python.main:app --port 8000
+# Windows PowerShell
+.\.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
+pip install -r requirements.txt
+python main.py
 ```
 
-> Prefer pnpm scripts? After activating the virtual environment, you can start the server with `pnpm start:pizzaz-python`.
+Prefer invoking uvicorn directly? From the repository root you can run `uvicorn pizzaz_server_python.main:app --port 8000` once dependencies are installed.
+
+> Prefer pnpm scripts? After activating the virtual environment, return to the repository root (for example `cd ..`) and run `pnpm start:pizzaz-python`.
 
 ### Solar system Python server
 
 ```bash
+cd solar-system_server_python
 python -m venv .venv
-source .venv/bin/activate    # Unix/Mac
-pip install -r solar-system_server_python/requirements.txt
-uvicorn solar-system_server_python.main:app --port 8000
+# Windows PowerShell
+.\.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
+pip install -r requirements.txt
+python main.py
 ```
 
-> Similarly, `pnpm start:solar-python` wraps the uvicorn command once the environment is ready.
+Prefer invoking uvicorn directly? From the repository root you can run `uvicorn solar-system_server_python.main:app --port 8000` once dependencies are installed.
+
+> Similarly, once the virtual environment is active, head back to the repository root and run `pnpm start:solar-python` to use the wrapper script.
 
 You can reuse the same virtual environment for all Python servers—install the dependencies once and run whichever entry point you need.
 
