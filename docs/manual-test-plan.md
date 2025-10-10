@@ -30,6 +30,9 @@ The test cases below validate those instructions end-to-end. Record **Pass** or 
 | TS-014 | Windows Compatibility Smoke | Windows 11 PowerShell | Execute TS-001–TS-013 using PowerShell-friendly commands (no `source`, rely on `.\venv\Scripts\activate`). | All workflows succeed without shell syntax issues; README references align with Windows guidance. | PASS
 | TS-015 | Linux Compatibility Smoke | Ubuntu (or similar) shell with Node, Python, pnpm | Repeat TS-001–TS-013 using POSIX syntax (`source`, `export`). | All workflows succeed; README guidance matches Unix shell expectations. | PASS
 | TS-016 | README Consistency Review | None | 1. Cross-check root and server READMEs against observed behavior above. 2. Verify instructions for `.env`, build, dev server, and pnpm wrappers. | Documentation aligns with reality; log discrepancies (e.g., missing mention of per-directory `.env`). | PASS
+| TS-017 | Pizzaz Video Production Widget | TS-005 completed | 1. With a Pizzaz server running in `ENVIRONMENT=production` and static assets served from TS-003, invoke the `pizza-video` tool through ChatGPT or mcp-inspector. 2. In devtools, confirm the widget requests `pizzaz-video-<hash>.css` and `.js` from the static origin and that the markup includes the `<script>window.__PIZZAZ_VIDEO_URL__</script>` snippet. 3. Verify the rendered video autoplays and loops in the widget. | Widget renders using hashed production assets; template URI ends with `?v=<hash>` matching the file suffix, and the default fallback video plays without errors. | PASS
+| TS-018 | Pizzaz Video Local Dev Widget | TS-006 completed | 1. With `ENVIRONMENT=local` and `pnpm run dev` active, invoke `pizza-video`. 2. Confirm network requests for `pizzaz-video.css`/`.js` serve from the dev origin without hash suffixes. 3. Inspect the resource list (ChatGPT inspector or client logs) to ensure the template URI query string begins with `?v=dev-`. | Video widget streams from the dev server without hashed filenames, reflects live code edits, and reports a `dev-*` version tag in the template URI. | PASS
+| TS-019 | Template Version Hash Propagation | TS-002 completed | 1. Note the 4-character hash emitted during the build (e.g., `294b`). 2. Inspect `assets/` to confirm each bundle—including `pizzaz-video`—uses that hash in filenames. 3. Start a Pizzaz server (Node or Python) in production mode and list resources via mcp-inspector. | Every widget resource/template URI ends with `?v=<hash>` that matches the built filenames; mismatches or missing `?v` values are defects. | PASS
 
 ## Test Notes Template
 
@@ -52,6 +55,7 @@ Create `docs/manual-test-results.md` (ignored by git) and copy the table above. 
 - Changes to `build-all.mts`, Vite configs, or Tailwind setup ➜ rerun TS-002, TS-003, and TS-006.
 - Updates to `scripts/run-python-server.mjs` or pnpm wrapper scripts ➜ rerun TS-009 and TS-011.
 - Modifying environment variable names or `.env` loading logic ➜ rerun TS-005 and TS-012.
+- Changes to the `pizzaz-video` widget, video script injection, or asset hash derivation ➜ rerun TS-017, TS-018, and TS-019.
 
 ## Exit Criteria
 
