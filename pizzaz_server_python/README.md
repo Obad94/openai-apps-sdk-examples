@@ -47,25 +47,26 @@ Use these handlers as a starting point when wiring in real data, authentication,
 
 Control where the widget assets load from via environment variables (PowerShell examples):
 
-- Dev hot reload:
-	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`
-	- `$env:PIZZAZ_ASSET_HASHED = 'false'`
+- **Dev hot reload**
+	- `$env:ENVIRONMENT = 'local'`
+	- (Optional) `$env:DOMAIN = 'http://localhost:4444'` if you want a different host than the default
 	- In another terminal, run `pnpm dev` at the repo root
 	- Start this server: `python main.py`
-	- If `TEMPLATE_VERSION` is unset in this mode, the server auto-generates a value that changes once per minute to trigger template re-fetches during development.
-- Serve local build:
+	- In this mode the server auto-generates a `dev-*` template version once per minute so ChatGPT refreshes frequently.
+- **Local hashed serve**
 	- `pnpm build` then `pnpm serve` at the repo root
-	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'true'`
+	- `$env:ENVIRONMENT = 'production'`
+	- `$env:DOMAIN = 'http://localhost:4444'`
 	- Start this server: `python main.py`
-- CDN fallback only:
-	- `Remove-Item Env:PIZZAZ_ASSET_ORIGIN`
-	- Optionally `$env:ASSET_HASH = 'dead'` to force CDN paths
+- **CDN fallback**
+	- `Remove-Item Env:DOMAIN`
 	- Start this server: `python main.py`
 
-Other env vars:
+Supported environment variables:
 
-- `$env:TEMPLATE_VERSION = 'dev1'` – cache-busts template URIs
-- `$env:PIZZAZ_VIDEO_URL = 'https://...'` – override default video for `pizzaz-video`
+- `ENVIRONMENT` – `'local'` enables dev defaults (origin `http://localhost:4444`, unhashed assets). `'production'` (default) uses hashed/CDN behavior.
+- `DOMAIN` – overrides the asset origin (e.g. `$env:DOMAIN = 'http://localhost:4444'`).
+- `PORT` – overrides the HTTP port (defaults to `8000`).
 
 ### .env support (per server)
 
@@ -73,6 +74,6 @@ You can create a `.env` file next to this README (see `.env.example`) to store t
 
 Which vars matter?
 - None are strictly required. With nothing set, the server serves widgets via CDN and uses sensible defaults.
-- PIZZAZ_ASSET_ORIGIN + PIZZAZ_ASSET_HASHED=false: hot reload from Vite (TEMPLATE_VERSION auto-bumps in this mode if unset).
-- PIZZAZ_ASSET_ORIGIN + PIZZAZ_ASSET_HASHED=true: serve local hashed assets after a build.
-- ASSET_HASH and TEMPLATE_VERSION are not required; they’re omitted from .env.example. Use only if you need advanced control.
+- `ENVIRONMENT=local`: hot reload from Vite (the template version auto-bumps in this mode). Override `DOMAIN` if you prefer a different host.
+- `ENVIRONMENT=production` (default): serve hashed assets (local or CDN depending on availability).
+- `DOMAIN` and `PORT` are optional conveniences and are omitted from `.env.example`.

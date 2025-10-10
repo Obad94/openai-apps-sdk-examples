@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 import json
 import logging
 import os
+import time
 
 import mcp.types as types
 from mcp.server.fastmcp import FastMCP
@@ -40,32 +41,55 @@ with (REPO_ROOT / "package.json").open("r", encoding="utf-8") as package_file:
     _package_version = json.load(package_file)["version"]
 
 DEFAULT_ASSET_HASH = hashlib.sha256(_package_version.encode("utf-8")).hexdigest()[:4]
-ASSET_HASH = (os.environ.get("ASSET_HASH") or DEFAULT_ASSET_HASH).lower()
 
+
+def _get_env(key: str) -> str | None:
+    return os.environ.get(key)
+
+
+# Environment variables - only these three are supported
+ENVIRONMENT = (_get_env("ENVIRONMENT") or "").strip()
+DOMAIN = (_get_env("DOMAIN") or "").strip() or None
+PORT = (_get_env("PORT") or "").strip() or None
+
+# Internal constants
 CDN_BASE = "https://persistent.oaistatic.com/ecosystem-built-assets"
 CDN_VERSION = "0038"
 
-DEV_ASSET_ORIGIN = os.environ.get("PIZZAZ_ASSET_ORIGIN")
-if DEV_ASSET_ORIGIN:
-    DEV_ASSET_ORIGIN = DEV_ASSET_ORIGIN.rstrip("/")
+# Determine asset serving strategy based on ENVIRONMENT and DOMAIN
+_environment = ENVIRONMENT.lower()
+_is_env_local = _environment in {"local", "dev", "development"}
 
-# When using the Vite dev server (`pnpm run dev`), assets are served without the hash suffix.
-# Set PIZZAZ_ASSET_HASHED=false to request un-hashed filenames from the dev origin.
-DEV_ASSET_HASHED = (os.environ.get("PIZZAZ_ASSET_HASHED") or "true").lower() != "false"
+if DOMAIN:
+    _dev_asset_origin = DOMAIN.rstrip("/")
+elif _is_env_local:
+    _dev_asset_origin = "http://localhost:4444"
+else:
+    _dev_asset_origin = None
 
-_is_dev_unhashed = bool(DEV_ASSET_ORIGIN) and (not DEV_ASSET_HASHED)
+# When using the Vite dev server (`pnpm run dev`), assets are served without the hash suffix
+_dev_asset_hashed = not _is_env_local
+
+_asset_hash = DEFAULT_ASSET_HASH
+
+_is_dev_unhashed = bool(_dev_asset_origin) and (not _dev_asset_hashed)
 _auto_dev_version = None
-if _is_dev_unhashed and not os.environ.get("TEMPLATE_VERSION"):
+if _is_dev_unhashed:
     # Auto-bump once per minute: dev-<base36(minutes since epoch)>
-    _auto_dev_version = f"dev-{int(__import__('time').time() // 60):x}"
+    _auto_dev_version = f"dev-{int(time.time() // 60):x}"
 
-TEMPLATE_VERSION = (os.environ.get("TEMPLATE_VERSION") or _auto_dev_version or ASSET_HASH).lower()
-VERSION_SUFFIX = f"?v={TEMPLATE_VERSION}" if TEMPLATE_VERSION else ""
+_template_version = (
+    _auto_dev_version
+    or _asset_hash
+).lower()
+_version_suffix = f"?v={_template_version}" if _template_version else ""
 
-# Default pizza video (provided by user). Override with PIZZAZ_VIDEO_URL.
+# Default pizza video (provided by user).
 DEFAULT_PIZZA_VIDEO_URL = (
     "https://videos.openai.com/vg-assets/assets%2Ftask_01k75dw4hcfb1tmte3mjmmeba4%2Ftask_01k75dw4hcfb1tmte3mjmmeba4_genid_dd080f2b-26b2-461f-8c61-651674dc3e3a_25_10_09_21_26_340602%2Fvideos%2F00000_402619027%2Fsource.mp4?se=2025-10-10T01%3A27%3A20Z&sp=r&sv=2024-08-04&sr=b&skoid=8b872fb2-b44b-4c1d-9ff6-1d4509d19e6e&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-10-09T21%3A13%3A27Z&ske=2025-10-09T22%3A23%3A27Z&sks=b&skv=2024-08-04&sig=BSzXN7jo/Ogs7ltxo%2BUj0ay1JwBTLqhtjYxmfUiqH0c%3D&az=oaivgprodscus"
 )
+
+VIDEO_URL_SCRIPT = f"<script>window.__PIZZAZ_VIDEO_URL__ = {json.dumps(DEFAULT_PIZZA_VIDEO_URL)};</script>"
 
 
 @dataclass(frozen=True)
@@ -80,8 +104,8 @@ class PizzazWidget:
 
 
 def _inline_widget_markup(asset_name: str) -> str | None:
-    css_path = ASSETS_DIR / f"{asset_name}-{ASSET_HASH}.css"
-    js_path = ASSETS_DIR / f"{asset_name}-{ASSET_HASH}.js"
+    css_path = ASSETS_DIR / f"{asset_name}-{_asset_hash}.css"
+    js_path = ASSETS_DIR / f"{asset_name}-{_asset_hash}.js"
 
     try:
         css = css_path.read_text(encoding="utf-8")
@@ -92,12 +116,7 @@ def _inline_widget_markup(asset_name: str) -> str | None:
         logger.warning("Failed to load local assets for %s (%s)", asset_name, exc)
         return None
 
-    video_url = os.environ.get("PIZZAZ_VIDEO_URL") or DEFAULT_PIZZA_VIDEO_URL
-    extra = (
-        f"<script>window.__PIZZAZ_VIDEO_URL__ = {json.dumps(video_url)};</script>"
-        if asset_name == "pizzaz-video"
-        else ""
-    )
+    extra = VIDEO_URL_SCRIPT if asset_name == "pizzaz-video" else ""
 
     return (
         f'<div id="{asset_name}-root"></div>\n'
@@ -108,12 +127,7 @@ def _inline_widget_markup(asset_name: str) -> str | None:
 
 
 def _cdn_widget_markup(asset_name: str) -> str:
-    video_url = os.environ.get("PIZZAZ_VIDEO_URL") or DEFAULT_PIZZA_VIDEO_URL
-    extra = (
-        f"<script>window.__PIZZAZ_VIDEO_URL__ = {json.dumps(video_url)};</script>"
-        if asset_name == "pizzaz-video"
-        else ""
-    )
+    extra = VIDEO_URL_SCRIPT if asset_name == "pizzaz-video" else ""
 
     return (
         f'<div id="{asset_name}-root"></div>\n'
@@ -124,7 +138,7 @@ def _cdn_widget_markup(asset_name: str) -> str:
 
 
 def _dev_hosted_widget_markup(asset_name: str) -> str | None:
-    if not DEV_ASSET_ORIGIN:
+    if not _dev_asset_origin:
         return None
 
     # Only serve from the dev origin if a corresponding entry exists under src/
@@ -133,16 +147,11 @@ def _dev_hosted_widget_markup(asset_name: str) -> str | None:
     if not src_dir.exists():
         return None
 
-    hash_segment = f"-{ASSET_HASH}" if DEV_ASSET_HASHED else ""
-    css_href = f"{DEV_ASSET_ORIGIN}/{asset_name}{hash_segment}.css"
-    js_src = f"{DEV_ASSET_ORIGIN}/{asset_name}{hash_segment}.js"
+    hash_segment = f"-{_asset_hash}" if _dev_asset_hashed else ""
+    css_href = f"{_dev_asset_origin}/{asset_name}{hash_segment}.css"
+    js_src = f"{_dev_asset_origin}/{asset_name}{hash_segment}.js"
 
-    video_url = os.environ.get("PIZZAZ_VIDEO_URL") or DEFAULT_PIZZA_VIDEO_URL
-    extra = (
-        f"<script>window.__PIZZAZ_VIDEO_URL__ = {json.dumps(video_url)};</script>"
-        if asset_name == "pizzaz-video"
-        else ""
-    )
+    extra = VIDEO_URL_SCRIPT if asset_name == "pizzaz-video" else ""
 
     return (
         f'<div id="{asset_name}-root"></div>\n'
@@ -155,7 +164,7 @@ def _dev_hosted_widget_markup(asset_name: str) -> str | None:
 def _build_widget_markup(asset_name: str) -> str:
     dev_markup = _dev_hosted_widget_markup(asset_name)
     if dev_markup is not None:
-        logger.info("Serving %s from dev asset origin %s", asset_name, DEV_ASSET_ORIGIN)
+        logger.info("Serving %s from dev asset origin %s", asset_name, _dev_asset_origin)
         return dev_markup
 
     inline = _inline_widget_markup(asset_name)
@@ -165,7 +174,7 @@ def _build_widget_markup(asset_name: str) -> str:
     logger.info(
         "Using CDN assets for %s (no matching local assets for hash %s in %s)",
         asset_name,
-        ASSET_HASH,
+        _asset_hash,
         ASSETS_DIR,
     )
     return _cdn_widget_markup(asset_name)
@@ -224,7 +233,7 @@ widgets: List[PizzazWidget] = [
     PizzazWidget(
         identifier=config["identifier"],
         title=config["title"],
-        template_uri=f"{config['template_uri_base']}{VERSION_SUFFIX}",
+        template_uri=f"{config['template_uri_base']}{_version_suffix}",
         invoking=config["invoking"],
         invoked=config["invoked"],
         html=_build_widget_markup(config["asset_name"]),
@@ -452,7 +461,7 @@ except Exception:
 if __name__ == "__main__":
     import uvicorn
     try:
-        _port = int(os.environ.get("PORT", "8000"))
+        _port = int(PORT or "8000")
     except Exception:
         _port = 8000
     uvicorn.run("pizzaz_server_python.main:app", host="0.0.0.0", port=_port)

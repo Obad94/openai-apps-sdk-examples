@@ -28,8 +28,24 @@ import pkg from "../../package.json" with { type: "json" };
 const CDN_BASE = "https://persistent.oaistatic.com/ecosystem-built-assets";
 const CDN_VERSION = "0038";
 
-const devAssetOrigin = process.env.PIZZAZ_ASSET_ORIGIN?.replace(/\/$/, "");
-const devAssetUseHash = (process.env.PIZZAZ_ASSET_HASHED ?? "true").toLowerCase() !== "false";
+function getEnv(key: string): string | undefined {
+  const value = process.env[key];
+  return value === undefined ? undefined : value;
+}
+
+// Environment variables - only these three are supported
+const ENVIRONMENT = (getEnv("ENVIRONMENT") ?? "").trim();
+const DOMAIN = (getEnv("DOMAIN") ?? "").trim() || undefined;
+const PORT = (getEnv("PORT") ?? "").trim() || undefined;
+
+// Determine asset serving strategy based on ENVIRONMENT and DOMAIN
+const environment = ENVIRONMENT.toLowerCase();
+const isLocalEnv = environment === "local" || environment === "dev" || environment === "development";
+const rawDevAssetOrigin = DOMAIN ?? (isLocalEnv ? "http://localhost:4444" : undefined);
+const devAssetOrigin = rawDevAssetOrigin?.replace(/\/$/, "");
+
+// When using the Vite dev server (`pnpm run dev`), assets are served without the hash suffix
+const devAssetUseHash = !isLocalEnv;
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(__dirname, "../../");
@@ -41,18 +57,20 @@ const computedAssetHash = crypto
   .digest("hex")
   .slice(0, 4);
 
-const assetHash = (process.env.ASSET_HASH ?? computedAssetHash).toLowerCase();
+const assetHash = computedAssetHash.toLowerCase();
 
-// In dev with un-hashed assets and no explicit TEMPLATE_VERSION, auto-bump once per minute
+// In dev with un-hashed assets, auto-bump once per minute
 const isDevUnhashed = Boolean(devAssetOrigin) && !devAssetUseHash;
-const autoDevVersion = isDevUnhashed && !process.env.TEMPLATE_VERSION
+const autoDevVersion = isDevUnhashed
   ? `dev-${Math.floor(Date.now() / 60_000).toString(36)}`
   : undefined;
-const templateVersion = ((process.env.TEMPLATE_VERSION ?? autoDevVersion ?? assetHash)).toLowerCase();
+const templateVersion = ((autoDevVersion ?? assetHash)).toLowerCase();
 
-// Default pizza video (provided by user). Override with PIZZAZ_VIDEO_URL.
+// Default pizza video (provided by user).
 const DEFAULT_PIZZA_VIDEO_URL =
   "https://videos.openai.com/vg-assets/assets%2Ftask_01k75dw4hcfb1tmte3mjmmeba4%2Ftask_01k75dw4hcfb1tmte3mjmmeba4_genid_dd080f2b-26b2-461f-8c61-651674dc3e3a_25_10_09_21_26_340602%2Fvideos%2F00000_402619027%2Fsource.mp4?se=2025-10-10T01%3A27%3A20Z&sp=r&sv=2024-08-04&sr=b&skoid=8b872fb2-b44b-4c1d-9ff6-1d4509d19e6e&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-10-09T21%3A13%3A27Z&ske=2025-10-09T22%3A23%3A27Z&sks=b&skv=2024-08-04&sig=BSzXN7jo/Ogs7ltxo%2BUj0ay1JwBTLqhtjYxmfUiqH0c%3D&az=oaivgprodscus";
+
+const videoScriptSnippet = `<script>window.__PIZZAZ_VIDEO_URL__ = ${JSON.stringify(DEFAULT_PIZZA_VIDEO_URL)};<\/script>`;
 
 type PizzazWidget = {
   id: string;
@@ -84,9 +102,7 @@ function devHostedWidgetHtml(assetName: string): string | undefined {
   const hashSegment = devAssetUseHash ? `-${assetHash}` : "";
   const cssHref = `${devAssetOrigin}/${assetName}${hashSegment}.css`;
   const jsSrc = `${devAssetOrigin}/${assetName}${hashSegment}.js`;
-  const extraScript = assetName === "pizzaz-video"
-    ? `<script>window.__PIZZAZ_VIDEO_URL__ = ${JSON.stringify(process.env.PIZZAZ_VIDEO_URL ?? DEFAULT_PIZZA_VIDEO_URL)};<\/script>`
-    : "";
+  const extraScript = assetName === "pizzaz-video" ? videoScriptSnippet : "";
 
   return `
 <div id="${assetName}-root"></div>
@@ -109,9 +125,7 @@ function inlineWidgetHtml(assetName: string): string | undefined {
     const css = readFileSync(cssPath, "utf8");
     const js = readFileSync(jsPath, "utf8");
 
-    const extraScript = assetName === "pizzaz-video"
-      ? `<script>window.__PIZZAZ_VIDEO_URL__ = ${JSON.stringify(process.env.PIZZAZ_VIDEO_URL ?? DEFAULT_PIZZA_VIDEO_URL)};<\/script>`
-      : "";
+    const extraScript = assetName === "pizzaz-video" ? videoScriptSnippet : "";
 
     return `
 <div id="${assetName}-root"></div>
@@ -136,9 +150,7 @@ ${extraScript}
 }
 
 function cdnWidgetHtml(assetName: string): string {
-  const extraScript = assetName === "pizzaz-video"
-    ? `<script>window.__PIZZAZ_VIDEO_URL__ = ${JSON.stringify(process.env.PIZZAZ_VIDEO_URL ?? DEFAULT_PIZZA_VIDEO_URL)};<\/script>`
-    : "";
+  const extraScript = assetName === "pizzaz-video" ? videoScriptSnippet : "";
 
   return `
 <div id="${assetName}-root"></div>
@@ -406,7 +418,7 @@ async function handlePostMessage(
   }
 }
 
-const portEnv = Number(process.env.PORT ?? 8000);
+const portEnv = Number(PORT ?? 8000);
 const port = Number.isFinite(portEnv) ? portEnv : 8000;
 
 const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {

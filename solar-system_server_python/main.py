@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import os
 import json
+import time
 from dotenv import load_dotenv
 from typing import Any, Dict, List
 
@@ -27,12 +28,18 @@ except Exception:
 # Asset configuration mirrors the Pizzaz servers
 CDN_BASE = "https://persistent.oaistatic.com/ecosystem-built-assets"
 CDN_VERSION = "0038"
-DEV_ASSET_ORIGIN = os.environ.get("PIZZAZ_ASSET_ORIGIN")
-if DEV_ASSET_ORIGIN:
-    DEV_ASSET_ORIGIN = DEV_ASSET_ORIGIN.rstrip("/")
-DEV_ASSET_HASHED = (os.environ.get("PIZZAZ_ASSET_HASHED") or "true").lower() != "false"
 
-# Compute a default 4-char asset hash from package version; allow override via ASSET_HASH
+
+def _get_env(key: str) -> str | None:
+    return os.environ.get(key)
+
+
+# Environment variables - only these three are supported
+ENVIRONMENT = (_get_env("ENVIRONMENT") or "").strip()
+DOMAIN = (_get_env("DOMAIN") or "").strip() or None
+PORT = (_get_env("PORT") or "").strip() or None
+
+# Compute a default 4-char asset hash from package version
 ASSETS_DIR = REPO_ROOT / "assets"
 try:
     with (REPO_ROOT / "package.json").open("r", encoding="utf-8") as _pkg:
@@ -40,17 +47,32 @@ try:
 except Exception:
     _version = "0.0.0"
 import hashlib as _hashlib
-DEFAULT_ASSET_HASH = _hashlib.sha256(_version.encode("utf-8")).hexdigest()[:4]
-ASSET_HASH = (os.environ.get("ASSET_HASH") or DEFAULT_ASSET_HASH).lower()
+_default_asset_hash = _hashlib.sha256(_version.encode("utf-8")).hexdigest()[:4]
+
+# Determine asset serving strategy based on ENVIRONMENT and DOMAIN
+_environment = ENVIRONMENT.lower()
+_is_env_local = _environment in {"local", "dev", "development"}
+
+if DOMAIN:
+    _dev_asset_origin = DOMAIN.rstrip("/")
+elif _is_env_local:
+    _dev_asset_origin = "http://localhost:4444"
+else:
+    _dev_asset_origin = None
+
+# When using the Vite dev server (`pnpm run dev`), assets are served without the hash suffix
+_dev_asset_hashed = not _is_env_local
+
+_asset_hash = _default_asset_hash
 
 # Auto-bump template version in dev un-hashed mode if unset
-_is_dev_unhashed = bool(DEV_ASSET_ORIGIN) and (not DEV_ASSET_HASHED)
+_is_dev_unhashed = bool(_dev_asset_origin) and (not _dev_asset_hashed)
 _auto_dev_version = None
-if _is_dev_unhashed and not os.environ.get("TEMPLATE_VERSION"):
-    _auto_dev_version = f"dev-{int(__import__('time').time() // 60):x}"
+if _is_dev_unhashed:
+    _auto_dev_version = f"dev-{int(time.time() // 60):x}"
 
-TEMPLATE_VERSION = (os.environ.get("TEMPLATE_VERSION") or _auto_dev_version or "").lower()
-VERSION_SUFFIX = f"?v={TEMPLATE_VERSION}" if TEMPLATE_VERSION else ""
+_template_version = (_auto_dev_version or _asset_hash).lower()
+_version_suffix = f"?v={_template_version}" if _template_version else ""
 PLANETS = [
     "Mercury",
     "Venus",
@@ -98,8 +120,8 @@ class SolarWidget:
 
 
 def _inline_widget_markup() -> str | None:
-    css_path = ASSETS_DIR / f"solar-system-{ASSET_HASH}.css"
-    js_path = ASSETS_DIR / f"solar-system-{ASSET_HASH}.js"
+    css_path = ASSETS_DIR / f"solar-system-{_asset_hash}.css"
+    js_path = ASSETS_DIR / f"solar-system-{_asset_hash}.js"
     try:
         css = css_path.read_text(encoding="utf-8")
         js = js_path.read_text(encoding="utf-8")
@@ -117,10 +139,10 @@ def _inline_widget_markup() -> str | None:
 
 def _solar_widget_html() -> str:
     # Dev origin path (optionally hashed filenames) if configured
-    if DEV_ASSET_ORIGIN:
-        hash_segment = f"-{ASSET_HASH}" if DEV_ASSET_HASHED else ""
-        css_href = f"{DEV_ASSET_ORIGIN}/solar-system{hash_segment}.css"
-        js_src = f"{DEV_ASSET_ORIGIN}/solar-system{hash_segment}.js"
+    if _dev_asset_origin:
+        hash_segment = f"-{_asset_hash}" if _dev_asset_hashed else ""
+        css_href = f"{_dev_asset_origin}/solar-system{hash_segment}.css"
+        js_src = f"{_dev_asset_origin}/solar-system{hash_segment}.js"
         return (
             '<div id="solar-system-root"></div>\n'
             f'<link rel="stylesheet" href="{css_href}">\n'
@@ -143,7 +165,7 @@ def _solar_widget_html() -> str:
 WIDGET = SolarWidget(
     identifier="solar-system",
     title="Explore the Solar System",
-    template_uri=f"ui://widget/solar-system.html{VERSION_SUFFIX}",
+    template_uri=f"ui://widget/solar-system.html{_version_suffix}",
     invoking="Charting the solar system",
     invoked="Solar system ready",
     html=_solar_widget_html(),
@@ -387,7 +409,7 @@ except Exception:  # pragma: no cover - middleware is optional
 if __name__ == "__main__":
     import uvicorn
     try:
-        _port = int(os.environ.get("PORT", "8000"))
+        _port = int(PORT or "8000")
     except Exception:
         _port = 8000
     uvicorn.run("solar-system_server_python.main:app", host="0.0.0.0", port=_port)

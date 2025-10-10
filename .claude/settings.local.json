@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nrefactor(env): standardize to DOMAIN, ENVIRONMENT, PORT only\n\nRemoved all stale/confusing environment variables across the codebase:\n- Removed: WIDGET_ASSET_ORIGIN, PIZZAZ_ASSET_ORIGIN, WIDGET_ENV, PIZZAZ_ENV\n- Removed: ASSET_HASH, TEMPLATE_VERSION, PIZZAZ_VIDEO_URL (user-facing)\n- Removed: PIZZAZ_ASSET_HASHED (replaced with ENVIRONMENT logic)\n\nStandardized to only 3 user-facing environment variables:\n- DOMAIN: Asset origin override (optional)\n- ENVIRONMENT: Mode toggle - ''local'' for dev, ''production'' for hashed/CDN\n- PORT: Server port override (optional, defaults to 8000)\n\nAll internal/derived variables now use underscore prefix for clarity:\n- _dev_asset_origin, _dev_asset_hashed, _asset_hash, _template_version, etc.\n\nUpdated all .env.example files and README documentation to reflect\nstandardized approach. Template versioning auto-bumps in dev mode.\n\nCross-platform and open-source ready.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

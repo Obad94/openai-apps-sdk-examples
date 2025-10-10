@@ -43,19 +43,26 @@ experience inline.
 
 Control where the widget assets load from via environment variables (PowerShell examples):
 
-- Dev hot reload:
-	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`
-	- `$env:PIZZAZ_ASSET_HASHED = 'false'`
+- **Dev hot reload**
+	- `$env:ENVIRONMENT = 'local'`
+	- (Optional) `$env:DOMAIN = 'http://localhost:4444'` if you want a different host than the default
 	- In another terminal, run `pnpm dev` at the repo root
 	- Start this server: `python main.py`
-	- Note: If `TEMPLATE_VERSION` is unset in this mode, it auto-bumps once per minute to trigger template re-fetches during development.
-- Serve local build:
+	- In this mode the server auto-generates a `dev-*` template version once per minute so ChatGPT refreshes frequently.
+- **Local hashed serve**
 	- `pnpm build` then `pnpm serve` at the repo root
-	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'true'`
+	- `$env:ENVIRONMENT = 'production'`
+	- `$env:DOMAIN = 'http://localhost:4444'`
 	- Start this server: `python main.py`
-- CDN fallback only:
-	- `Remove-Item Env:PIZZAZ_ASSET_ORIGIN`
+- **CDN fallback**
+	- `Remove-Item Env:DOMAIN`
 	- Start this server: `python main.py`
+
+Supported environment variables:
+
+- `ENVIRONMENT` – `'local'` enables dev defaults (origin `http://localhost:4444`, unhashed assets). `'production'` (default) uses hashed/CDN behavior.
+- `DOMAIN` – overrides the asset origin (e.g. `$env:DOMAIN = 'http://localhost:4444'`).
+- `PORT` – overrides the HTTP port (defaults to `8000`).
 
 ### .env support
 

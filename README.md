@@ -75,26 +75,24 @@ The assets are exposed at [`http://localhost:4444`](http://localhost:4444) with 
 These examples support multiple ways to load widget assets. Pick the mode that suits your workflow:
 
 - Dev (hot reload): run `pnpm dev` to start Vite at `http://localhost:4444`, then start a Pizzaz MCP server. The servers will fetch un-hashed dev bundles from the dev origin so UI changes reflect instantly.
-	- In dev with un-hashed assets and no `TEMPLATE_VERSION` set, the servers auto-generate a minute-granularity version like `dev-k9` so ChatGPT refetches the template periodically while you iterate.
+	- In dev with un-hashed assets, the servers auto-generate a minute-granularity version like `dev-k9` so ChatGPT refetches the template periodically while you iterate.
 - Serve (local hashed build): run `pnpm build` then `pnpm serve` to host hashed bundles from the `assets/` folder at `http://localhost:4444`. Start a Pizzaz MCP server and it will use the same origin.
 - CDN fallback: if no dev origin is set and the local hashed files are missing, the servers fall back to the published CDN snapshot. This is useful for quick testing without building locally. Note: `pizzaz-video` is local-only and not on the CDN.
 
 Environment variables you can set before starting a server (PowerShell examples):
 
-- `PIZZAZ_ASSET_ORIGIN`: when set, points to a dev/serve host, e.g. `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`
-- `PIZZAZ_ASSET_HASHED`: set to `true` to request hashed assets from the origin; `false` for dev un-hashed, e.g. `$env:PIZZAZ_ASSET_HASHED = 'false'`
-- `ASSET_HASH`: optionally override the asset hash (4 chars) used for lookups, e.g. `$env:ASSET_HASH = '2d2b'`
-- `TEMPLATE_VERSION`: cache-busting query value appended to `ui://` template URIs, e.g. `$env:TEMPLATE_VERSION = 'dev1'`
-- `PIZZAZ_VIDEO_URL`: override the default video used in the `pizzaz-video` widget
+- `ENVIRONMENT`: high-level mode toggle (`local` vs `production`). `local` applies Vite dev defaults automatically; `production` (the default) assumes hashed/static assets.
+- `DOMAIN`: when set, points to a dev/serve host, e.g. `$env:DOMAIN = 'http://localhost:4444'`
+- `PORT`: override the HTTP port (defaults to `8000`), e.g. `$env:PORT = '9000'`
 
 Examples (PowerShell):
 
 - Dev hot reload:
-	- `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'false'`; `pnpm dev` in one terminal; `pnpm start:pizzaz-node` in another.
+	- `$env:ENVIRONMENT = 'local'`; (optional) `$env:DOMAIN = 'http://localhost:4444'`; `pnpm dev` in one terminal; `pnpm start:pizzaz-node` in another.
 - Serve local build:
-	- `pnpm build`; `$env:PIZZAZ_ASSET_ORIGIN = 'http://localhost:4444'`; `$env:PIZZAZ_ASSET_HASHED = 'true'`; `pnpm serve`; `pnpm start:pizzaz-node`.
+	- `pnpm build`; `$env:ENVIRONMENT = 'production'`; `$env:DOMAIN = 'http://localhost:4444'`; `pnpm serve`; `pnpm start:pizzaz-node`.
 - CDN-only (no local assets):
-	- `Remove-Item Env:PIZZAZ_ASSET_ORIGIN`; `Remove-Item Env:ASSET_HASH` (optional); `pnpm start:pizzaz-node`.
+	- `Remove-Item Env:DOMAIN`; `pnpm start:pizzaz-node`.
 
 ## Local bundles in the MCP servers
 
@@ -102,7 +100,7 @@ Both Pizzaz MCP servers select assets in this order: dev origin → inline local
 
 - Run `pnpm run build` when UI changes; the servers read the hashed files that `build-all.mts` generates (for example, `pizzaz-2d2b.js`).
 - If a local file is missing, the servers silently fall back to the CDN (info-level logs only) so expected CDN usage stays clean.
-- Override the bundle hash with `ASSET_HASH` if you want to target a specific build output.
+- Bundle hashes are derived from the project version automatically; in dev mode (`ENVIRONMENT=local`), the servers auto-bump a `dev-*` template version once per minute so ChatGPT refreshes frequently.
 
 ## Run the MCP servers
 
