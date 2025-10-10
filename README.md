@@ -52,7 +52,6 @@ pnpm start
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate      # Windows
 source .venv/bin/activate    # Unix/Mac
 pip install -r pizzaz_server_python/requirements.txt
 pnpm start:pizzaz-python
@@ -64,7 +63,6 @@ pnpm start:pizzaz-python
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate      # Windows
 source .venv/bin/activate    # Unix/Mac
 pip install -r solar-system_server_python/requirements.txt
 pnpm start:solar-python

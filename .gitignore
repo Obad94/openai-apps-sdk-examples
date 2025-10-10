@@ -37,3 +37,6 @@ __pycache__/
 .venv/
 
 .claude/
+
+# Manual test artifacts
+docs/manual-test-results.md
