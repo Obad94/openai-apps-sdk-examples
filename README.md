@@ -79,7 +79,7 @@ The repository ships several demo MCP servers that highlight different widget bu
 
 Every tool response includes plain text content, structured JSON, and `_meta.openai/outputTemplate` metadata so the Apps SDK can hydrate the matching widget.
 
-All MCP servers read `ENVIRONMENT`, `DOMAIN`, and `PORT` from a `.env` file at the repository root (loaded via `dotenv`). Instead of exporting shell variables, create or update that file before starting a server. For example:
+Each MCP server reads `ENVIRONMENT`, `DOMAIN`, and `PORT` from a `.env` file located in its own directory (`pizzaz_server_node/.env`, `pizzaz_server_python/.env`, `solar-system_server_python/.env`). Instead of exporting shell variables, create or update the `.env` file beside the server you're running. For example, inside `pizzaz_server_node/.env`:
 
 ```env
 # Development: consume Vite dev assets on http://localhost:5173
