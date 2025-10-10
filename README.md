@@ -5,70 +5,6 @@
 This repository showcases example UI components to be used with the Apps SDK, as well as example MCP servers that expose a collection of components as tools.
 It is meant to be used as a starting point and source of inspiration to build your own apps for ChatGPT.
 
-## Quick Start
-
-### 1. Choose and Run a Server
-
-**Node Server (Pizzaz):**
-```bash
-cd pizzaz_server_node
-pnpm install
-pnpm start
-```
-
-**Python Server (Pizzaz):**
-```bash
-# Windows
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r pizzaz_server_python/requirements.txt
-python pizzaz_server_python/main.py
-
-# Unix/Mac
-python -m venv .venv
-source .venv/bin/activate
-pip install -r pizzaz_server_python/requirements.txt
-python pizzaz_server_python/main.py
-```
-
-> Prefer a one-liner? After installing requirements you can run `pnpm start:pizzaz-python`. The helper script
-> auto-detects the right Python executable on Windows, macOS, and Linux.
-
-**Python Server (Solar System):**
-```bash
-# Windows
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r solar-system_server_python/requirements.txt
-python solar-system_server_python/main.py
-
-# Unix/Mac
-python -m venv .venv
-source .venv/bin/activate
-pip install -r solar-system_server_python/requirements.txt
-python solar-system_server_python/main.py
-```
-
-> Or use `pnpm start:solar-python` after installing dependencies—the launcher works across operating systems.
-
-Server runs at `http://localhost:8000/mcp` using CDN-hosted widgets (zero configuration required).
-
-### 2. Test in ChatGPT
-
-To add these apps to ChatGPT, enable [developer mode](https://platform.openai.com/docs/guides/developer-mode), and add your apps in Settings > Connectors.
-
-To add your local server without deploying it, use a tool like [ngrok](https://ngrok.com/) to expose your local server to the internet.
-
-Once your MCP server is running:
-
-```bash
-ngrok http 8000
-```
-
-You will get a public URL that you can use to add your local server to ChatGPT in Settings > Connectors.
-
-For example: `https://<custom_endpoint>.ngrok-free.app/mcp`
-
 ## MCP + Apps SDK Overview
 
 The Model Context Protocol (MCP) is an open specification for connecting large language model clients to external tools, data, and user interfaces. An MCP server exposes tools that a model can call during a conversation and returns results according to the tool contracts. Those results can include extra metadata—such as inline HTML—that the Apps SDK uses to render rich UI components (widgets) alongside assistant messages.
@@ -101,6 +37,52 @@ The MCP servers in this demo highlight how each tool can light up widgets by com
 ### Solar System (Python)
 - 3D solar system visualization widget
 - See [solar-system_server_python/README.md](solar-system_server_python/README.md)
+
+## Quick Start
+
+### Pizzaz (Node)
+
+```bash
+cd pizzaz_server_node
+pnpm install
+pnpm start
+```
+
+### Pizzaz (Python)
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate      # Windows
+source .venv/bin/activate    # Unix/Mac
+pip install -r pizzaz_server_python/requirements.txt
+pnpm start:pizzaz-python
+```
+
+> Prefer calling Python directly? Replace the last line with `python pizzaz_server_python/main.py`.
+
+### Solar System (Python)
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate      # Windows
+source .venv/bin/activate    # Unix/Mac
+pip install -r solar-system_server_python/requirements.txt
+pnpm start:solar-python
+```
+
+> Swap the final command with `python solar-system_server_python/main.py` if you want to invoke Python yourself.
+
+### Test in ChatGPT
+
+Enable [developer mode](https://platform.openai.com/docs/guides/developer-mode) and add the MCP server in Settings → Connectors. To share your local instance, expose it with a tunnel such as ngrok:
+
+```bash
+ngrok http 8000
+```
+
+Use the generated URL (for example `https://<custom_endpoint>.ngrok-free.app/mcp`) when configuring ChatGPT.
+
+All of the demo servers listen on `http://localhost:8000/mcp` by default. See each server’s README for environment variable options and additional workflows.
 
 ## Advanced Setup
 
@@ -164,34 +146,6 @@ export ENVIRONMENT=production
 export DOMAIN=http://localhost:4444
 pnpm start:pizzaz-node
 ```
-
-## Configuration
-
-All servers support **3 optional environment variables**:
-
-- `ENVIRONMENT`: `'local'` (dev mode with hot reload) or `'production'` (default, uses hashed/CDN assets)
-- `DOMAIN`: Asset origin URL override (e.g., `'http://localhost:4444'`)
-- `PORT`: Server port (default: `8000`)
-
-**With zero configuration, servers use CDN assets and sensible defaults.**
-
-Each server directory supports a `.env` file (see `.env.example` files). OS environment variables take precedence over `.env` files.
-
-### Asset Loading Strategy
-
-Servers load widget assets in this order:
-
-1. **Dev Origin** (if `DOMAIN` is set OR `ENVIRONMENT=local`):
-   - Loads from specified origin (default `http://localhost:4444` in local mode)
-   - Uses un-hashed filenames in local mode (e.g., `/pizzaz.js`)
-   - Auto-bumps template version every minute in dev mode for cache refresh
-
-2. **Inline Local Build** (if dev origin fails and local `assets/` exist):
-   - Reads hashed files from `assets/` directory
-   - Inlines CSS/JS into HTML templates
-
-3. **CDN Fallback** (if above fail):
-   - Uses published CDN version at `https://persistent.oaistatic.com/ecosystem-built-assets`
 
 ## Next Steps
 
