@@ -297,7 +297,7 @@ def _tool_meta(widget: PizzazWidget) -> Dict[str, Any]:
         "annotations": {
           "destructiveHint": False,
           "openWorldHint": False,
-          "readOnlyHint": True,
+          "readOnlyHint": True
         }
     }
 

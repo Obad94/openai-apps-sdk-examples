@@ -46,8 +46,8 @@ try:
         _version = json.load(_pkg)["version"]
 except Exception:
     _version = "0.0.0"
-import hashlib as _hashlib
-_default_asset_hash = _hashlib.sha256(_version.encode("utf-8")).hexdigest()[:4]
+import hashlib
+_default_asset_hash = hashlib.sha256(_version.encode("utf-8")).hexdigest()[:4]
 
 # Determine asset serving strategy based on ENVIRONMENT and DOMAIN
 _environment = ENVIRONMENT.lower()
@@ -214,7 +214,7 @@ def _tool_meta(widget: SolarWidget) -> Dict[str, Any]:
         "annotations": {
           "destructiveHint": False,
           "openWorldHint": False,
-          "readOnlyHint": True,
+          "readOnlyHint": True
         }
     }
 

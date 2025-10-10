@@ -64,7 +64,7 @@ const isDevUnhashed = Boolean(devAssetOrigin) && !devAssetUseHash;
 const autoDevVersion = isDevUnhashed
   ? `dev-${Math.floor(Date.now() / 60_000).toString(36)}`
   : undefined;
-const templateVersion = ((autoDevVersion ?? assetHash)).toLowerCase();
+const templateVersion = (autoDevVersion ?? assetHash).toLowerCase();
 
 // Default pizza video (provided by user).
 const DEFAULT_PIZZA_VIDEO_URL =

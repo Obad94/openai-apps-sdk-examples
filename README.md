@@ -5,7 +5,66 @@
 This repository showcases example UI components to be used with the Apps SDK, as well as example MCP servers that expose a collection of components as tools.
 It is meant to be used as a starting point and source of inspiration to build your own apps for ChatGPT.
 
-## MCP + Apps SDK overview
+## Quick Start
+
+### 1. Choose and Run a Server
+
+**Node Server (Pizzaz):**
+```bash
+cd pizzaz_server_node
+pnpm install
+pnpm start
+```
+
+**Python Server (Pizzaz):**
+```bash
+# Windows
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r pizzaz_server_python/requirements.txt
+python pizzaz_server_python/main.py
+
+# Unix/Mac
+python -m venv .venv
+source .venv/bin/activate
+pip install -r pizzaz_server_python/requirements.txt
+python pizzaz_server_python/main.py
+```
+
+**Python Server (Solar System):**
+```bash
+# Windows
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r solar-system_server_python/requirements.txt
+python solar-system_server_python/main.py
+
+# Unix/Mac
+python -m venv .venv
+source .venv/bin/activate
+pip install -r solar-system_server_python/requirements.txt
+python solar-system_server_python/main.py
+```
+
+Server runs at `http://localhost:8000/mcp` using CDN-hosted widgets (zero configuration required).
+
+### 2. Test in ChatGPT
+
+To add these apps to ChatGPT, enable [developer mode](https://platform.openai.com/docs/guides/developer-mode), and add your apps in Settings > Connectors.
+
+To add your local server without deploying it, use a tool like [ngrok](https://ngrok.com/) to expose your local server to the internet.
+
+Once your MCP server is running:
+
+```bash
+ngrok http 8000
+```
+
+You will get a public URL that you can use to add your local server to ChatGPT in Settings > Connectors.
+
+For example: `https://<custom_endpoint>.ngrok-free.app/mcp`
+
+## MCP + Apps SDK Overview
 
 The Model Context Protocol (MCP) is an open specification for connecting large language model clients to external tools, data, and user interfaces. An MCP server exposes tools that a model can call during a conversation and returns results according to the tool contracts. Those results can include extra metadata—such as inline HTML—that the Apps SDK uses to render rich UI components (widgets) alongside assistant messages.
 
@@ -19,7 +78,7 @@ Because the protocol is transport agnostic, you can host the server over Server-
 
 The MCP servers in this demo highlight how each tool can light up widgets by combining structured payloads with `_meta.openai/outputTemplate` metadata returned from the MCP servers.
 
-## Repository structure
+## Repository Structure
 
 - `src/` – Source for each widget example.
 - `assets/` – Generated HTML, JS, and CSS bundles after running the build step.
@@ -28,133 +87,108 @@ The MCP servers in this demo highlight how each tool can light up widgets by com
 - `solar-system_server_python/` – Python MCP server for the 3D solar system widget.
 - `build-all.mts` – Vite build orchestrator that produces hashed bundles for every widget entrypoint.
 
-## Prerequisites
+## Available Servers
+
+### Pizzaz (Node & Python)
+- 5 pizza-themed widget tools (map, carousel, albums, list, video)
+- See [pizzaz_server_node/README.md](pizzaz_server_node/README.md) or [pizzaz_server_python/README.md](pizzaz_server_python/README.md)
+
+### Solar System (Python)
+- 3D solar system visualization widget
+- See [solar-system_server_python/README.md](solar-system_server_python/README.md)
+
+## Advanced Setup
+
+### Prerequisites
 
 - Node.js 18+
 - pnpm (recommended) or npm/yarn
-- Python 3.10+ (for the Python MCP server)
+- Python 3.10+ (for Python servers)
 
-## Install dependencies
+### Building Widgets Locally
 
-Clone the repository and install the workspace dependencies:
-
+Install root dependencies:
 ```bash
 pnpm install
 ```
 
-> Using npm or yarn? Install the root dependencies with your preferred client and adjust the commands below accordingly.
-
-## Build the components gallery
-
-The components are bundled into standalone assets that the MCP servers serve as reusable UI resources.
-
+Build widgets:
 ```bash
 pnpm run build
 ```
 
-This command runs `build-all.mts`, producing versioned `.html`, `.js`, and `.css` files inside `assets/`. Each widget is wrapped with the CSS it needs so you can host the bundles directly or ship them with your own server.
+This produces versioned `.html`, `.js`, and `.css` files in `assets/` with hashed filenames.
 
-To iterate locally, you can also launch the Vite dev server:
+### Development Mode (Hot Reload)
 
+Terminal 1 - Start Vite dev server:
 ```bash
 pnpm run dev
 ```
 
-## Serve the static assets
-
-If you want to preview the generated bundles without the MCP servers, start the static file server after running a build:
-
+Terminal 2 - Start MCP server with dev mode:
 ```bash
+# Windows PowerShell
+$env:ENVIRONMENT = 'local'
+pnpm start:pizzaz-node
+
+# Unix/Mac
+export ENVIRONMENT=local
+pnpm start:pizzaz-node
+```
+
+Widgets refresh automatically on file changes.
+
+### Serve Local Build
+
+Build and serve static assets:
+```bash
+pnpm run build
 pnpm run serve
 ```
 
-The assets are exposed at [`http://localhost:4444`](http://localhost:4444) with CORS enabled so that local tooling (including MCP inspectors) can fetch them.
-
-## Run modes at a glance (dev, serve, CDN)
-
-These examples support multiple ways to load widget assets. Pick the mode that suits your workflow:
-
-- Dev (hot reload): run `pnpm dev` to start Vite at `http://localhost:4444`, then start a Pizzaz MCP server. The servers will fetch un-hashed dev bundles from the dev origin so UI changes reflect instantly.
-	- In dev with un-hashed assets, the servers auto-generate a minute-granularity version like `dev-k9` so ChatGPT refetches the template periodically while you iterate.
-- Serve (local hashed build): run `pnpm build` then `pnpm serve` to host hashed bundles from the `assets/` folder at `http://localhost:4444`. Start a Pizzaz MCP server and it will use the same origin.
-- CDN fallback: if no dev origin is set and the local hashed files are missing, the servers fall back to the published CDN snapshot. This is useful for quick testing without building locally. Note: `pizzaz-video` is local-only and not on the CDN.
-
-Environment variables you can set before starting a server (PowerShell examples):
-
-- `ENVIRONMENT`: high-level mode toggle (`local` vs `production`). `local` applies Vite dev defaults automatically; `production` (the default) assumes hashed/static assets.
-- `DOMAIN`: when set, points to a dev/serve host, e.g. `$env:DOMAIN = 'http://localhost:4444'`
-- `PORT`: override the HTTP port (defaults to `8000`), e.g. `$env:PORT = '9000'`
-
-Examples (PowerShell):
-
-- Dev hot reload:
-	- `$env:ENVIRONMENT = 'local'`; (optional) `$env:DOMAIN = 'http://localhost:4444'`; `pnpm dev` in one terminal; `pnpm start:pizzaz-node` in another.
-- Serve local build:
-	- `pnpm build`; `$env:ENVIRONMENT = 'production'`; `$env:DOMAIN = 'http://localhost:4444'`; `pnpm serve`; `pnpm start:pizzaz-node`.
-- CDN-only (no local assets):
-	- `Remove-Item Env:DOMAIN`; `pnpm start:pizzaz-node`.
-
-## Local bundles in the MCP servers
-
-Both Pizzaz MCP servers select assets in this order: dev origin → inline local build → CDN fallback. The CSS/JS are inlined when using local builds so the widgets render the same as your local output.
-
-- Run `pnpm run build` when UI changes; the servers read the hashed files that `build-all.mts` generates (for example, `pizzaz-2d2b.js`).
-- If a local file is missing, the servers silently fall back to the CDN (info-level logs only) so expected CDN usage stays clean.
-- Bundle hashes are derived from the project version automatically; in dev mode (`ENVIRONMENT=local`), the servers auto-bump a `dev-*` template version once per minute so ChatGPT refreshes frequently.
-
-## Run the MCP servers
-
-The repository ships several demo MCP servers that highlight different widget bundles:
-
-- **Pizzaz (Node & Python)** – pizza-inspired collection of tools and components
-- **Solar system (Python)** – 3D solar system viewer
-
-Every tool response includes plain text content, structured JSON, and `_meta.openai/outputTemplate` metadata so the Apps SDK can hydrate the matching widget.
-
-### Pizzaz Node server
-
+Start server with local assets:
 ```bash
-cd pizzaz_server_node
-pnpm start
+# Windows PowerShell
+$env:ENVIRONMENT = 'production'
+$env:DOMAIN = 'http://localhost:4444'
+pnpm start:pizzaz-node
+
+# Unix/Mac
+export ENVIRONMENT=production
+export DOMAIN=http://localhost:4444
+pnpm start:pizzaz-node
 ```
 
-### Pizzaz Python server
+## Configuration
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r pizzaz_server_python/requirements.txt
-uvicorn pizzaz_server_python.main:app --port 8000
-```
+All servers support **3 optional environment variables**:
 
-### Solar system Python server
+- `ENVIRONMENT`: `'local'` (dev mode with hot reload) or `'production'` (default, uses hashed/CDN assets)
+- `DOMAIN`: Asset origin URL override (e.g., `'http://localhost:4444'`)
+- `PORT`: Server port (default: `8000`)
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r solar-system_server_python/requirements.txt
-uvicorn solar-system_server_python.main:app --port 8000
-```
+**With zero configuration, servers use CDN assets and sensible defaults.**
 
-You can reuse the same virtual environment for all Python servers—install the dependencies once and run whichever entry point you need.
+Each server directory supports a `.env` file (see `.env.example` files). OS environment variables take precedence over `.env` files.
 
-## Testing in ChatGPT
+### Asset Loading Strategy
 
-To add these apps to ChatGPT, enable [developer mode](https://platform.openai.com/docs/guides/developer-mode), and add your apps in Settings > Connectors.
+Servers load widget assets in this order:
 
-To add your local server without deploying it, you can use a tool like [ngrok](https://ngrok.com/) to expose your local server to the internet.
+1. **Dev Origin** (if `DOMAIN` is set OR `ENVIRONMENT=local`):
+   - Loads from specified origin (default `http://localhost:4444` in local mode)
+   - Uses un-hashed filenames in local mode (e.g., `/pizzaz.js`)
+   - Auto-bumps template version every minute in dev mode for cache refresh
 
-For example, once your mcp servers are running, you can run:
+2. **Inline Local Build** (if dev origin fails and local `assets/` exist):
+   - Reads hashed files from `assets/` directory
+   - Inlines CSS/JS into HTML templates
 
-```bash
-ngrok http 8000
-```
+3. **CDN Fallback** (if above fail):
+   - Uses published CDN version at `https://persistent.oaistatic.com/ecosystem-built-assets`
 
-You will get a public URL that you can use to add your local server to ChatGPT in Settings > Connectors.
-
-For example: `https://<custom_endpoint>.ngrok-free.app/mcp`
-
-## Next steps
+## Next Steps
 
 - Customize the widget data: edit the handlers in `pizzaz_server_node/src`, `pizzaz_server_python/main.py`, or the solar system server to fetch data from your systems.
 - Create your own components and add them to the gallery: drop new entries into `src/` and they will be picked up automatically by the build script.
