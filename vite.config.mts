@@ -170,7 +170,7 @@ function multiEntryDevEndpoints(options: {
         return lines.join("\n");
       }
 
-      if (kind === "entry") {
+  if (kind === "entry") {
         const spec = toFs(entry);
 
         const lines: string[] = [];
@@ -189,8 +189,8 @@ if (!window.__vite_plugin_react_preamble_installed__) {
 }
 `);
 
-    lines.push(`import "/${name}.css";`);
-        lines.push(`await import(${JSON.stringify(spec)});`);
+  // Load the React entry; CSS is linked via <link rel="stylesheet"> in HTML
+  lines.push(`await import(${JSON.stringify(spec)});`);
 
         return lines.join("\n");
       }
@@ -210,9 +210,10 @@ export default defineConfig(({}) => ({
   ],
   cacheDir: "node_modules/.vite-react",
   server: {
-    port: 4444,
-    strictPort: true,
-    cors: true,
+  port: 4444,
+  strictPort: true,
+  cors: true,
+  host: true,
   },
   esbuild: {
     jsx: "automatic",
